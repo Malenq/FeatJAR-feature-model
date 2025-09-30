@@ -2,27 +2,18 @@ package de.featjar.feature.model.transformer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import de.featjar.base.computation.Computations;
 import de.featjar.base.computation.ComputeConstant;
-import de.featjar.base.computation.Progress;
-import de.featjar.base.data.Result;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.FeatureModel;
-import de.featjar.feature.model.FeatureTest;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.connective.And;
-import de.featjar.formula.structure.connective.BiImplies;
 import de.featjar.formula.structure.connective.Implies;
-import de.featjar.formula.structure.connective.Not;
-import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
 
@@ -43,7 +34,9 @@ class ComputeFormulaTest {
 		featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
 		
 		// root must be selected
-		expected = new Reference(new And(new Literal("root")));
+		expected = new Reference(new And(
+					new Literal("root")
+				));
 		
 		executeTest();
 	}
@@ -62,6 +55,7 @@ class ComputeFormulaTest {
 		IFeature childFeature = featureModel.mutate().addFeature("Test1");
 		rootTree.mutate().addFeatureBelow(childFeature);
 		
+		// TODO: check order if bug is fixed
         expected = new Reference( new And (
     				new Literal ("root"),
         			new Implies( new Literal("Test1") , new Literal ("root") )
