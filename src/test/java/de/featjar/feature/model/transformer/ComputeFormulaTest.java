@@ -23,6 +23,7 @@ package de.featjar.feature.model.transformer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.featjar.base.computation.ComputeConstant;
+import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.FeatureModel;
 import de.featjar.feature.model.IFeature;
@@ -75,6 +76,20 @@ class ComputeFormulaTest {
         expected = new Reference(new And(new Literal("root"), new Implies(new Literal("Test1"), new Literal("root"))));
 
         executeTest();
+    }
+    
+    @Test
+    void withCardinality() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+    	rootTree.mutate().toAndGroup();
+    	
+    	IFeature childFeature = featureModel.mutate().addFeature("Test1");
+    	
+    	// set cardinality for the child feature
+        rootTree.mutate().addFeatureBelow(childFeature).mutate().setFeatureCardinality(Range.of(0, 2));
+    	
+        executeTest();   	
     }
 
     private void executeTest() {

@@ -79,8 +79,13 @@ public class ComputeFormula extends AComputation<IFormula> {
             Literal featureLiteral = Expressions.literal(featureName);
             if (potentialParentTree.isEmpty()) {
                 handleRoot(constraints, featureLiteral, node);
-            } else {
+            } 
+            else {
                 handleParent(constraints, featureLiteral, node);
+            }
+
+            if(node.getFeatureCardinalityUpperBound() > 1) {
+            	handleCardinalityFeature(constraints, featureLiteral, node);
             }
             handleGroups(constraints, featureLiteral, node);
         });
@@ -100,6 +105,12 @@ public class ComputeFormula extends AComputation<IFormula> {
         if (node.isMandatory()) {
             constraints.add(featureLiteral);
         }
+    }
+    
+    private void handleCardinalityFeature(ArrayList<IFormula> constraints, Literal featureLiteral, IFeatureTree node) {
+    	// create literals for every case in range (if range goes further than one)
+    	
+    	
     }
 
     private void handleGroups(ArrayList<IFormula> constraints, Literal featureLiteral, IFeatureTree node) {
