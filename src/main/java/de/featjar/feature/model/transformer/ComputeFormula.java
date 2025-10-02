@@ -74,6 +74,25 @@ public class ComputeFormula extends AComputation<IFormula> {
             Variable variable = new Variable(featureName, feature.getType());
             variables.add(variable);
 
+        if (feature.getType().equals(Boolean.class)) {
+                IFormula featureFormula = Expressions.literal(featureName);
+
+                Result<IFeatureTree> potentialParentTree = node.getParent;
+                if(potentialParentTree.isEmpty()) {
+                    handleRoot(constraints, featureFormula, node);
+                } else{
+                    handleParent(constraints, featureFormula, node);
+                }
+                handleGroups(constraints, featureFormula, node);
+            } else if (feature.getType.equals(Integer.class)) {
+                IFormula featureLiteral = new NotEquals(variable, new Constant(0));
+                constraint.add(featureLiteral);
+            } else if(feature.getType.equals(float.class) {
+                IFormula featureLiteral = new NotEquals(variable, new Constant(0.0));
+                constraint.add(featureLiteral);
+            }
+
+
             // TODO take featureRanges into Account
             Result<IFeatureTree> potentialParentTree = node.getParent();
             Literal featureLiteral = Expressions.literal(featureName);
