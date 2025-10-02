@@ -91,7 +91,10 @@ class ComputeFormulaTest {
         IFeature childFeature2 = featureModel.mutate().addFeature("Test2");
         rootTree.mutate().addFeatureBelow(childFeature2);
         
-//        childTree1.mutate().toCardinalityGroup(Range.of(2, 3));
+        IFeature childFeature3 = featureModel.mutate().addFeature("Test3");
+        rootTree.mutate().addFeatureBelow(childFeature3);
+
+
     	
         executeTest();  
     }
