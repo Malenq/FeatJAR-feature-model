@@ -73,26 +73,17 @@ public class ComputeFormula extends AComputation<IFormula> {
             String featureName = feature.getName().orElse("");
             Variable variable = new Variable(featureName, feature.getType());
             variables.add(variable);
-
-        if (feature.getType().equals(Boolean.class)) {
-                IFormula featureFormula = Expressions.literal(featureName);
-
-                Result<IFeatureTree> potentialParentTree = node.getParent;
-                if(potentialParentTree.isEmpty()) {
-                    handleRoot(constraints, featureFormula, node);
-                } else{
-                    handleParent(constraints, featureFormula, node);
-                }
-                handleGroups(constraints, featureFormula, node);
+            IFormula featureLiteral;
+            if (feature.getType().equals(Boolean.class)) {
+                featureLiteral = Expressions.literal(featureName);
             } else if (feature.getType.equals(Integer.class)) {
-                IFormula featureLiteral = new NotEquals(variable, new Constant(0));
-                constraint.add(featureLiteral);
-            } else if(feature.getType.equals(float.class) {
-                IFormula featureLiteral = new NotEquals(variable, new Constant(0.0));
-                constraint.add(featureLiteral);
+                featureLiteral = new NotEquals(variable, new Constant(0));
+            } else if(feature.getType.equals(Float.class) {
+                featureLiteral = new NotEquals(variable, new Constant(0.0));
+            } else {
+                FeatJAR.log().warning("Could not handle type "+ feature.getType());
+                return;
             }
-
-
             // TODO take featureRanges into Account
             Result<IFeatureTree> potentialParentTree = node.getParent();
             Literal featureLiteral = Expressions.literal(featureName);
@@ -105,7 +96,7 @@ public class ComputeFormula extends AComputation<IFormula> {
         });
         Reference reference = new Reference(new And(constraints));
         reference.setFreeVariables(variables);
-        return Result.of(reference);
+        return Result.of(reference, problemList);
     }
 
     private void handleParent(ArrayList<IFormula> constraints, Literal featureLiteral, IFeatureTree node) {
