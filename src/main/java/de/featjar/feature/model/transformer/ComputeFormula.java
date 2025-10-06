@@ -20,6 +20,7 @@
  */
 package de.featjar.feature.model.transformer;
 
+import de.featjar.base.FeatJAR;
 import de.featjar.base.computation.AComputation;
 import de.featjar.base.computation.Dependency;
 import de.featjar.base.computation.IComputation;
@@ -41,6 +42,8 @@ import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
+import de.featjar.formula.structure.predicate.NotEquals;
+import de.featjar.formula.structure.term.value.Constant;
 import de.featjar.formula.structure.term.value.Variable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -73,23 +76,23 @@ public class ComputeFormula extends AComputation<IFormula> {
             String featureName = feature.getName().orElse("");
             Variable variable = new Variable(featureName, feature.getType());
             variables.add(variable);
-            
-           IFormula featureLiteral;
-           if (feature.getType().equals(Boolean.class)) {
-               featureLiteral = Expressions.literal(featureName);
-           } else if (feature.getType().equals(Integer.class)) {
-               featureLiteral = new NotEquals(variable, new Constant(0));
-           } else if(feature.getType().equals(Float.class)) {
-               featureLiteral = new NotEquals(variable, new Constant(0.0));
-           } else {
-               FeatJAR.log().warning("Could not handle type "+ feature.getType());
-               return;
-           }
 
+            IFormula featureFormula;
+            if (feature.getType().equals(Boolean.class)) {
+                featureFormula = Expressions.literal(featureName);
+            } else if (feature.getType().equals(Integer.class)) {
+                featureFormula = new NotEquals(variable, new Constant(0));
+            } else if(feature.getType().equals(Float.class)) {
+                featureFormula = new NotEquals(variable, new Constant(0.0));
+            } else {
+                FeatJAR.log().warning("Could not handle type "+ feature.getType());
+                return;
+            }
 
             // TODO take featureRanges into Account
             Result<IFeatureTree> potentialParentTree = node.getParent();
             Literal featureLiteral = Expressions.literal(featureName);
+
             if (potentialParentTree.isEmpty()) {
                 handleRoot(constraints, featureLiteral, node);
             } else {
@@ -99,7 +102,7 @@ public class ComputeFormula extends AComputation<IFormula> {
         });
         Reference reference = new Reference(new And(constraints));
         reference.setFreeVariables(variables);
-        return Result.of(reference, problemList);
+        return Result.of(reference);
     }
 
     private void handleParent(ArrayList<IFormula> constraints, Literal featureLiteral, IFeatureTree node) {
