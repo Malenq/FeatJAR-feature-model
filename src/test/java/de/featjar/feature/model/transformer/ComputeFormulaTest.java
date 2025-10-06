@@ -100,7 +100,7 @@ class ComputeFormulaTest {
     }
     
     @Test
-    void withCardinalityFeature() {
+    void withOneCardinalityFeature() {
     	IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
     	rootTree.mutate().toAndGroup();
@@ -108,6 +108,25 @@ class ComputeFormulaTest {
     	// create and set cardinality for the child feature
     	IFeature childFeature = featureModel.mutate().addFeature("Test1");
         rootTree.mutate().addFeatureBelow(childFeature).mutate().setFeatureCardinality(Range.of(0, 2));
+    	
+        executeTest();   	
+    }
+    
+    @Test
+    void withTwoCardinalityFeatures() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+    	rootTree.mutate().toAndGroup();
+    	
+    	// create and set cardinality for the child feature
+    	IFeature childFeature1 = featureModel.mutate().addFeature("Test1");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        IFeature childFeature2 = featureModel.mutate().addFeature("Test2");
+        IFeatureTree childFeature2Tree = childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+        childFeature2Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
     	
         executeTest();   	
     }

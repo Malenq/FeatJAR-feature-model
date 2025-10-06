@@ -41,6 +41,7 @@ public class ComputeFormulaVisitor implements ITreeVisitor<IFeatureTree, Void> {
 		// TODO use better error value
         IFeature feature = node.getFeature();
         String featureName = feature.getName().orElse("");
+        // TODO: do not add variable if its a cardinality var. Add duplicates instead
         Variable variable = new Variable(featureName, feature.getType());
         variables.add(variable);
 
@@ -84,44 +85,93 @@ public class ComputeFormulaVisitor implements ITreeVisitor<IFeatureTree, Void> {
     
     private void handleCardinalityFeature(Literal featureLiteral, IFeatureTree node) {
     	
-    	// step 1: add cardinality feature to stack:
-    	cardinalityStack.add(new CardinalityObject(node.getFeature().getName().get(), node.getFeatureCardinalityUpperBound()));
-    			
-    	int lowerBound = node.getFeatureCardinalityLowerBound();
-    	int upperBound = node.getFeatureCardinalityUpperBound();
-    	
-    	ArrayList<IFormula> featureList = new ArrayList<IFormula>();
-    	
-    	// step 2: add literals and implication to parent
-    	String literalName = "";
-    	for (int i = 1; i<= upperBound; i++) {
+    	// step 0: check stack
+    	if (cardinalityStack.empty()) {
+    		int lowerBound = node.getFeatureCardinalityLowerBound();
+        	int upperBound = node.getFeatureCardinalityUpperBound();
+        	
+        	ArrayList<IFormula> featureList = new ArrayList<IFormula>();
+        	
+        	// step 2: add literals and implication to parent
+        	String literalName = "";
+        	for (int i = 1; i<= upperBound; i++) {
+        		
+        		literalName = node.getFeature().getName().get() + "_" + i;
+        		featureLiteral = new Literal(literalName);
+        		handleParent(featureLiteral, node);
+        		
+        		if (i > 1) {
+        			// step 3: add to implication chain
+        			IFormula previousLiteral = featureList.get(featureList.size()-1);
+        			constraints.add(new Implies(featureLiteral, previousLiteral));
+        		}
+        		
+        		featureList.add(featureLiteral);
+        	}
+        	
+        	// step 4: add cardinality constraint
+        	// TODO: feature literal must be parent!
+        	if (lowerBound > 0) {
+                if (upperBound != Range.OPEN) {
+                    constraints.add(new Implies(
+                    		featureLiteral, new Between(lowerBound, upperBound, featureList)));
+                } else {
+                    constraints.add(new Implies(featureLiteral, new AtMost(upperBound, featureList)));
+                }
+            } else {
+                if (upperBound != Range.OPEN) {
+                    constraints.add(new Implies(featureLiteral, new AtLeast(lowerBound, featureList)));
+                }
+            }
+    	} else {
+    		int lowerBound = node.getFeatureCardinalityLowerBound();
+        	int upperBound = node.getFeatureCardinalityUpperBound();
     		
-    		literalName = node.getFeature().getName().get() + "_" + i;
-    		featureLiteral = new Literal(literalName);
-    		handleParent(featureLiteral, node);
-    		
-    		if (i > 1) {
-    			// step 3: add to implication chain
-    			IFormula previousLiteral = featureList.get(featureList.size()-1);
-    			constraints.add(new Implies(featureLiteral, previousLiteral));
-    		}
-    		
-    		featureList.add(featureLiteral);
+    		CardinalityObject parentCardObject = cardinalityStack.pop();
+        	int parentUpperBound = parentCardObject.getNumber();
+        	
+        	String literalName = "";
+        	for (int i = 1; i <= parentUpperBound; i++) {
+        		
+        		ArrayList<IFormula> featureList = new ArrayList<IFormula>();
+        		for (int j = 1; j <= upperBound; j++) {
+            		
+            		literalName = node.getFeature().getName().get() + "_" + i + "_" + j;
+            		featureLiteral = new Literal(literalName);
+            		handleParent(featureLiteral, node);
+            		
+            		if (j > 1) {
+            			// step 3: add to implication chain
+            			IFormula previousLiteral = featureList.get(featureList.size()-1);
+            			constraints.add(new Implies(featureLiteral, previousLiteral));
+            		}
+            		
+            		featureList.add(featureLiteral);
+            	}
+        		
+        		// step 4: add cardinality constraint
+            	if (lowerBound > 0) {
+                    if (upperBound != Range.OPEN) {
+                        constraints.add(new Implies(
+                        		featureLiteral, new Between(lowerBound, upperBound, featureList)));
+                    } else {
+                        constraints.add(new Implies(featureLiteral, new AtMost(upperBound, featureList)));
+                    }
+                } else {
+                    if (upperBound != Range.OPEN) {
+                        constraints.add(new Implies(featureLiteral, new AtLeast(lowerBound, featureList)));
+                    }
+                }
+        		
+        	}
+        	
     	}
     	
-    	// step 4: add cardinality constraint
-    	if (lowerBound > 0) {
-            if (upperBound != Range.OPEN) {
-                constraints.add(new Implies(
-                		featureLiteral, new Between(lowerBound, upperBound, featureList)));
-            } else {
-                constraints.add(new Implies(featureLiteral, new AtMost(upperBound, featureList)));
-            }
-        } else {
-            if (upperBound != Range.OPEN) {
-                constraints.add(new Implies(featureLiteral, new AtLeast(lowerBound, featureList)));
-            }
-        }
+    
+    	// step 1: add cardinality feature to stack:
+    	cardinalityStack.add(new CardinalityObject(node.getFeature().getName().get(), node.getFeatureCardinalityUpperBound()));
+    	
+
     }
 
     private void handleGroups(Literal featureLiteral, IFeatureTree node) {
