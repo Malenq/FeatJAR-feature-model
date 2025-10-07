@@ -44,6 +44,7 @@ import de.featjar.formula.structure.term.value.Variable;
  */
 public class ComputeFormula extends AComputation<IFormula> {
 	protected static final Dependency<IFeatureModel> FEATURE_MODEL = Dependency.newDependency(IFeatureModel.class);
+	protected boolean doSimpleCardinalityTranslation = false;
 
     public ComputeFormula(IComputation<IFeatureModel> formula) {
         super(formula);
@@ -53,6 +54,9 @@ public class ComputeFormula extends AComputation<IFormula> {
         super(other);
     }
     
+    public void SetSimple() {
+    	doSimpleCardinalityTranslation = true;
+    }
     
 
     @Override
@@ -62,7 +66,13 @@ public class ComputeFormula extends AComputation<IFormula> {
         HashSet<Variable> variables = new HashSet<>();
         
         IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
-        Trees.traverse(iFeatureTree, new ComputeFormulaVisitor(constraints, variables));
+        
+        if(doSimpleCardinalityTranslation) {
+        	Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));        	
+        }
+        else {
+        	Trees.traverse(iFeatureTree, new ComputeFormulaVisitor(constraints, variables));
+        }
         
 //        featureModel.getFeatureTreeStream().forEach(node -> {
 //            // TODO use better error value
