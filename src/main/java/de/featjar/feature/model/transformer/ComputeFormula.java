@@ -77,13 +77,13 @@ public class ComputeFormula extends AComputation<IFormula> {
             Variable variable = new Variable(featureName, feature.getType());
             variables.add(variable);
 
-            IFormula featureFormula;
+            IFormula featureLiteral;
             if (feature.getType().equals(Boolean.class)) {
-                featureFormula = Expressions.literal(featureName);
+                featureLiteral = Expressions.literal(featureName);
             } else if (feature.getType().equals(Integer.class)) {
-                featureFormula = new NotEquals(variable, new Constant(0));
+                featureLiteral = new NotEquals(variable, new Constant(0));
             } else if(feature.getType().equals(Float.class)) {
-                featureFormula = new NotEquals(variable, new Constant(0.0));
+                featureLiteral = new NotEquals(variable, new Constant(0.0));
             } else {
                 FeatJAR.log().warning("Could not handle type "+ feature.getType());
                 return;
@@ -91,7 +91,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 
             // TODO take featureRanges into Account
             Result<IFeatureTree> potentialParentTree = node.getParent();
-            Literal featureLiteral = Expressions.literal(featureName);
+            //Literal featureLiteral = Expressions.literal(featureName);
 
             if (potentialParentTree.isEmpty()) {
                 handleRoot(constraints, featureLiteral, node);
@@ -105,20 +105,20 @@ public class ComputeFormula extends AComputation<IFormula> {
         return Result.of(reference);
     }
 
-    private void handleParent(ArrayList<IFormula> constraints, Literal featureLiteral, IFeatureTree node) {
+    private void handleParent(ArrayList<IFormula> constraints, IFormula featureLiteral, IFeatureTree node) {
         constraints.add(new Implies(
                 featureLiteral,
                 Expressions.literal(
                         node.getParent().get().getFeature().getName().orElse(""))));
     }
 
-    private void handleRoot(ArrayList<IFormula> constraints, Literal featureLiteral, IFeatureTree node) {
+    private void handleRoot(ArrayList<IFormula> constraints, IFormula featureLiteral, IFeatureTree node) {
         if (node.isMandatory()) {
             constraints.add(featureLiteral);
         }
     }
-
-    private void handleGroups(ArrayList<IFormula> constraints, Literal featureLiteral, IFeatureTree node) {
+// Literal -> IFormula
+    private void handleGroups(ArrayList<IFormula> constraints, IFormula featureLiteral, IFeatureTree node) {
         List<Group> childrenGroups = node.getChildrenGroups();
         int groupCount = childrenGroups.size();
         ArrayList<List<IFormula>> groupLiterals = new ArrayList<>(groupCount);
