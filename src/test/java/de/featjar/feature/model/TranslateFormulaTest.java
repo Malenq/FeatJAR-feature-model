@@ -72,7 +72,7 @@ public class TranslateFormulaTest {
         rootTree.getRoot().mutate().toAndGroup();
         for (short i = 0; i < 5; i++) {
             IFeature feature = featureModel.mutate().addFeature(i + "feature");
-            feature.mutate().setName("feature"+i);
+            feature.mutate().setName("feature" + i);
             feature.mutate().setType(type);
             rootTree.mutate().addFeatureBelow(feature);
 
@@ -92,7 +92,7 @@ public class TranslateFormulaTest {
                         new Constant(expectedValue, type)), new Literal("root")),
                 Expressions.implies(new NotEquals(new Variable("feature4", Boolean.class),
                         new Constant(expectedValue, type)), new Literal("root"))
-                ));
+        ));
     }
 
     private IFormula buildBooleanForumla() {
@@ -104,5 +104,4 @@ public class TranslateFormulaTest {
                 Expressions.implies(Expressions.literal("feature4"), Expressions.literal("root"))
         ));
     }
-
 }
