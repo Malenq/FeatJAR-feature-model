@@ -91,7 +91,6 @@ public class ComputeFormula extends AComputation<IFormula> {
 
             // TODO take featureRanges into Account
             Result<IFeatureTree> potentialParentTree = node.getParent();
-            //Literal featureLiteral = Expressions.literal(featureName);
 
             if (potentialParentTree.isEmpty()) {
                 handleRoot(constraints, featureLiteral, node);
@@ -117,7 +116,7 @@ public class ComputeFormula extends AComputation<IFormula> {
             constraints.add(featureLiteral);
         }
     }
-// Literal -> IFormula
+
     private void handleGroups(ArrayList<IFormula> constraints, IFormula featureLiteral, IFeatureTree node) {
         List<Group> childrenGroups = node.getChildrenGroups();
         int groupCount = childrenGroups.size();

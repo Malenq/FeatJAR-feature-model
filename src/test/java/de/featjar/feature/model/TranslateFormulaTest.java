@@ -16,6 +16,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+/**
+ * @author Lara Merza
+ * @author Felix Behme
+ * @author Jonas Hanke
+ */
+
 public class TranslateFormulaTest {
 
     @BeforeAll
@@ -45,7 +51,6 @@ public class TranslateFormulaTest {
         IFormula result = Computations.of(featureModel)
                 .map(ComputeFormula::new)
                 .compute();
-
         IFormula formula = buildBooleanForumla();
         Assertions.assertEquals(result.print(), formula.print());
         FeatJAR.log().info("Boolean Test expected value: " + formula.print());
