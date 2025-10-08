@@ -39,6 +39,7 @@ import de.featjar.formula.structure.connective.And;
 import de.featjar.formula.structure.connective.AtLeast;
 import de.featjar.formula.structure.connective.Choose;
 import de.featjar.formula.structure.connective.Implies;
+import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
 
@@ -84,6 +85,43 @@ class ComputeFormulaTest {
     }
     
     @Test
+    void withTwoCardinaliesRecursive() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+    	rootTree.mutate().toAndGroup();
+    	
+    	// create and set cardinality for the child feature
+    	IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        IFeatureTree childFeature2Tree = childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+        childFeature2Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        expected = new Reference(new And(
+        		new Literal("root"),
+        		new Implies(new Literal("A_1"), new Literal("root")),
+        		new Implies(new Literal("B_1.A_1"), new Literal("A_1")),
+        		new Implies(new Literal("B_2.A_1"), new Literal("A_1")),
+        		new Implies(new Literal("B_2.A_1"), new Literal("B_1.A_1")),
+        		new Implies(new Literal("A_1"), new AtLeast(0, Arrays.asList(new Literal("B_1.A_1"), new Literal("B_2.A_1")))),
+        		
+        		new Implies(new Literal("A_2"), new Literal("root")),
+        		new Implies(new Literal("A_2"), new Literal("A_1")),
+        		new Implies(new Literal("B_1.A_2"), new Literal("A_2")),
+        		new Implies(new Literal("B_2.A_2"), new Literal("A_2")),
+        		new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2")),
+        		new Implies(new Literal("A_2"), new AtLeast(0, Arrays.asList(new Literal("B_1.A_2"), new Literal("B_2.A_2")))),
+        		
+        		new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
+        		));
+
+        executeRecursiveTest();
+    	
+    }
+    
+    @Test
     void simpleWithCardinalityAndChildGroup() {
     	IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
@@ -119,6 +157,105 @@ class ComputeFormulaTest {
     	
     }
     
+    @Test
+    void withCardinalityAndChildGroupRecursive() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+    	rootTree.mutate().toAndGroup();
+    	
+    	// create and set cardinality for the child feature
+    	IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        childFeature1Tree.mutate().toAlternativeGroup();
+        
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+        
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature3);
+       
+        
+        expected = new Reference(new And(
+        		new Literal("root"),
+        		new Implies(new Literal("A_1"), new Literal("root")),
+        		new Implies(new Literal("A_1"), new Choose(1, Arrays.asList(new Literal("B.A_1"), new Literal("C.A_1")))),
+        		new Implies(new Literal("B.A_1"), new Literal("A_1")),
+        		new Implies(new Literal("C.A_1"), new Literal("A_1")),
+        		
+        		new Implies(new Literal("A_2"), new Literal("root")),
+        		new Implies(new Literal("A_2"), new Literal("A_1")),
+        		new Implies(new Literal("A_2"), new Choose(1, Arrays.asList(new Literal("B.A_2"), new Literal("C.A_2")))),
+        		new Implies(new Literal("B.A_2"), new Literal("A_2")),
+        		new Implies(new Literal("C.A_2"), new Literal("A_2")),
+        		
+        		new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
+        		
+        		));
+    	
+        executeRecursiveTest();  	
+    }
+
+    @Test
+    void withCardinalityAndChildChildGroupRecursive() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+    	rootTree.mutate().toAndGroup();
+    	
+    	// create and set cardinality for the child feature
+    	IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        childFeature1Tree.mutate().toAlternativeGroup();
+        
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+        
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        IFeatureTree childFeature1Tree2 = childFeature1Tree.mutate().addFeatureBelow(childFeature3);
+        
+        childFeature1Tree2.mutate().toOrGroup();
+        
+        IFeature childFeature4 = featureModel.mutate().addFeature("D");
+        childFeature1Tree2.mutate().addFeatureBelow(childFeature4);
+        
+        IFeature childFeature5 = featureModel.mutate().addFeature("E");
+        childFeature1Tree2.mutate().addFeatureBelow(childFeature5);
+       
+        
+        expected = new Reference(new And(
+        		new Literal("root"),
+        		new Implies(new Literal("A_1"), new Literal("root")),
+        		new Implies(new Literal("A_1"), new Choose(1, Arrays.asList(new Literal("B.A_1"), new Literal("C.A_1")))),
+        		new Implies(new Literal("B.A_1"), new Literal("A_1")),
+        		new Implies(new Literal("C.A_1"), new Literal("A_1")),
+        		
+        		//sub-subtree
+        		new Implies(new Literal("C.A_1"), new Or(Arrays.asList(new Literal("D.C.A_1"), new Literal("E.C.A_1")))),
+        		new Implies(new Literal("D.C.A_1"), new Literal("C.A_1")),
+        		new Implies(new Literal("E.C.A_1"), new Literal("C.A_1")),
+        		
+        		new Implies(new Literal("A_2"), new Literal("root")),
+        		new Implies(new Literal("A_2"), new Literal("A_1")),
+        		new Implies(new Literal("A_2"), new Choose(1, Arrays.asList(new Literal("B.A_2"), new Literal("C.A_2")))),
+        		new Implies(new Literal("B.A_2"), new Literal("A_2")),
+        		new Implies(new Literal("C.A_2"), new Literal("A_2")),
+        		
+        		//second sub-subtree
+        		new Implies(new Literal("C.A_2"), new Or(Arrays.asList(new Literal("D.C.A_2"), new Literal("E.C.A_2")))),
+        		new Implies(new Literal("D.C.A_2"), new Literal("C.A_2")),
+        		new Implies(new Literal("E.C.A_2"), new Literal("C.A_2")),
+        		
+        		new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
+        		
+        		// missing
+        		));
+    	
+        executeRecursiveTest();  	
+    }
+
     @Test
     void onlyRoot() {
 
@@ -184,9 +321,15 @@ class ComputeFormulaTest {
     	rootTree.mutate().toAndGroup();
     	
     	// create and set cardinality for the child feature
-    	IFeature childFeature = featureModel.mutate().addFeature("Test1");
-        rootTree.mutate().addFeatureBelow(childFeature).mutate().setFeatureCardinality(Range.of(0, 2));
-    	
+    	IFeature childFeature = featureModel.mutate().addFeature("A");
+    	IFeatureTree childFeatureTree1 = rootTree.mutate().addFeatureBelow(childFeature);
+    	childFeatureTree1.mutate().setFeatureCardinality(Range.of(0, 2));
+
+    	// add normal feature below
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeatureTree1.mutate().addFeatureBelow(childFeature2);
+        
+        
         executeTest();   	
     }
     
@@ -197,13 +340,17 @@ class ComputeFormulaTest {
     	rootTree.mutate().toAndGroup();
     	
     	// create and set cardinality for the child feature
-    	IFeature childFeature1 = featureModel.mutate().addFeature("Test1");
+    	IFeature childFeature1 = featureModel.mutate().addFeature("A");
         IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
         childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
         
-        IFeature childFeature2 = featureModel.mutate().addFeature("Test2");
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
         IFeatureTree childFeature2Tree = childFeature1Tree.mutate().addFeatureBelow(childFeature2);
         childFeature2Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+     // add normal feature below
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        childFeature2Tree.mutate().addFeatureBelow(childFeature3);
         
     	
         executeTest();   	
@@ -225,7 +372,22 @@ class ComputeFormulaTest {
         ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
         ComputeFormula computeFormula = new ComputeFormula(computeConstant);
 
-        computeFormula.SetSimple();
+        IFormula resultFormula = computeFormula
+        		.set(ComputeFormula.SIMPLE_TRANSLATION, Boolean.TRUE)
+        		.computeResult().get();
+
+        // assert
+        assertEquals(expected, resultFormula);
+    }
+    
+    private void executeRecursiveTest() {
+
+        ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
+        ComputeFormula computeFormula = new ComputeFormula(computeConstant);
+
+        // recursive is default now
+//        computeFormula.setRecursive();
+        
         IFormula resultFormula = computeFormula.computeResult().get();
 
         // assert

@@ -22,19 +22,31 @@ package de.featjar.feature.model.transformer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 import de.featjar.base.computation.AComputation;
+import de.featjar.base.computation.Computations;
 import de.featjar.base.computation.Dependency;
 import de.featjar.base.computation.IComputation;
 import de.featjar.base.computation.Progress;
+import de.featjar.base.data.Attribute;
+import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.Trees;
+import de.featjar.feature.model.FeatureTree.Group;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.connective.And;
+import de.featjar.formula.structure.connective.AtLeast;
+import de.featjar.formula.structure.connective.AtMost;
+import de.featjar.formula.structure.connective.Between;
+import de.featjar.formula.structure.connective.Choose;
+import de.featjar.formula.structure.connective.Implies;
+import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
+import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
 
 /**
@@ -44,61 +56,208 @@ import de.featjar.formula.structure.term.value.Variable;
  */
 public class ComputeFormula extends AComputation<IFormula> {
 	protected static final Dependency<IFeatureModel> FEATURE_MODEL = Dependency.newDependency(IFeatureModel.class);
-	protected boolean doSimpleCardinalityTranslation = false;
+	protected static final Dependency<Boolean> SIMPLE_TRANSLATION = Dependency.newDependency(Boolean.class);
 
-    public ComputeFormula(IComputation<IFeatureModel> formula) {
-        super(formula);
-    }
+	static Attribute<String> literalNameAttribute = new Attribute<>("literalName", String.class);
+//	protected boolean traverseRecursive = false;
 
-    protected ComputeFormula(ComputeFormula other) {
-        super(other);
-    }
-    
-    public void SetSimple() {
-    	doSimpleCardinalityTranslation = true;
-    }
-    
+	public ComputeFormula(IComputation<IFeatureModel> formula) {
+		super(formula, Computations.of(Boolean.FALSE));
+	}
 
-    @Override
-    public Result<IFormula> compute(List<Object> dependencyList, Progress progress) {
-        IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
-        ArrayList<IFormula> constraints = new ArrayList<>();
-        HashSet<Variable> variables = new HashSet<>();
-        
-        IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
-        
-        if(doSimpleCardinalityTranslation) {
-        	Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));        	
-        }
-        else {
-        	Trees.traverse(iFeatureTree, new ComputeFormulaVisitor(constraints, variables));
-        }
-        
-//        featureModel.getFeatureTreeStream().forEach(node -> {
-//            // TODO use better error value
-//            IFeature feature = node.getFeature();
-//            String featureName = feature.getName().orElse("");
-//            Variable variable = new Variable(featureName, feature.getType());
-//            variables.add(variable);
-//
-//            // TODO take featureRanges into Account
-//            Result<IFeatureTree> potentialParentTree = node.getParent();
-//            Literal featureLiteral = Expressions.literal(featureName);
-//            if (potentialParentTree.isEmpty()) {
-//                handleRoot(constraints, featureLiteral, node);
-//            } 
-//            else {
-//                handleParent(constraints, featureLiteral, node);
-//            }
-//
-//            if(node.getFeatureCardinalityUpperBound() > 1) {
-//            	handleCardinalityFeature(constraints, featureLiteral, node);
-//            }
-//            handleGroups(constraints, featureLiteral, node);
-//        });
-        Reference reference = new Reference(new And(constraints));
-        reference.setFreeVariables(variables);
-        return Result.of(reference);
-    }
+	protected ComputeFormula(ComputeFormula other) {
+		super(other);
+	}
+
+//	public void setRecursive() {
+//		traverseRecursive = true;
+//	}
+
+	@Override
+	public Result<IFormula> compute(List<Object> dependencyList, Progress progress) {
+		IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
+		ArrayList<IFormula> constraints = new ArrayList<>();
+		HashSet<Variable> variables = new HashSet<>();
+
+		IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
+
+//		if (traverseRecursive) {
+//		} else {
+		if (SIMPLE_TRANSLATION.get(dependencyList)) {
+			Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));
+		} else {
+			traverseFeatureModel(featureModel, constraints, variables);
+//				Trees.traverse(iFeatureTree, new ComputeFormulaVisitor(constraints, variables));
+		}
+//		}
+
+		Reference reference = new Reference(new And(constraints));
+		reference.setFreeVariables(variables);
+		return Result.of(reference);
+	}
+
+	private void traverseFeatureModel(IFeatureModel featureModel, ArrayList<IFormula> constraints,
+			HashSet<Variable> variables) {
+
+		// copy FM to not change the original one
+		IFeatureModel temporaryFM = featureModel.clone();
+
+		for (IFeatureTree root : temporaryFM.getRoots()) {
+			constraints.add(new Literal(root.getFeature().getName().orElse("")));
+			addChildConstraints(root, constraints, temporaryFM);
+		}
+	}
+
+	private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints, IFeatureModel fm) {
+
+		Literal parentLiteral = new Literal(getLiteralName(node));
+
+		for (IFeatureTree child : node.getChildren()) {
+
+			if (isCardinalityFeature(child)) {
+
+				int upperBound = child.getFeatureCardinalityUpperBound();
+				int lowerBound = child.getFeatureCardinalityLowerBound();
+
+				LinkedList<Literal> constraintGroupLiterals = new LinkedList<Literal>();
+
+				for (int i = 1; i <= upperBound; i++) {
+
+					String literalName = getLiteralName(child) + "_" + i;
+					if (cardinalityFeatureAbove(child)) {
+						literalName += "." + getLiteralName(node);
+					}
+
+					IFeatureTree cardinalityClone = child.cloneTree();
+					cardinalityClone.mutate().setAttributeValue(literalNameAttribute, literalName);
+
+//					node.addChild(cardinalityClone);
+
+					Literal currentLiteral = new Literal(literalName);
+
+					// add all the constraints
+					// imply parent
+					constraints.add(new Implies(currentLiteral, parentLiteral));
+					// implication chain part
+					if (i > 1) {
+						Literal previousLiteral = constraintGroupLiterals.getLast();
+						constraints.add(new Implies(currentLiteral, previousLiteral));
+					}
+					// group constraints
+					handleGroups(currentLiteral, cardinalityClone, constraints);
+
+					constraintGroupLiterals.add(currentLiteral);
+
+					addChildConstraints(cardinalityClone, constraints, fm);
+				}
+				// TODO: check if 0 and do not add then
+				constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, constraintGroupLiterals)));
+
+				return;
+			} else {
+
+				String literalName = getLiteralName(child);
+				if (cardinalityFeatureAbove(child)) {
+					literalName += "." + getLiteralName(node);
+				}
+
+				Literal childFeatureLiteral = new Literal(literalName);
+				child.mutate().setAttributeValue(literalNameAttribute, literalName);
+
+				// add constraints
+				// always add parent implications (child implies parent)
+				constraints.add(new Implies(childFeatureLiteral, parentLiteral));
+
+				// handle group
+				handleGroups(childFeatureLiteral, child, constraints);
+
+				addChildConstraints(child, constraints, fm);
+			}
+		}
+	}
+
+	private String getLiteralName(IFeatureTree node) {
+		String literalName = "";
+		if (node.getAttributeValue(literalNameAttribute).isEmpty()) {
+			literalName = node.getFeature().getName().orElse("");
+		} else {
+			literalName = node.getAttributeValue(literalNameAttribute).orElse("");
+		}
+		return literalName;
+	}
+
+	private boolean cardinalityFeatureAbove(IFeatureTree child) {
+
+		if (!child.getParent().isPresent())
+			return false;
+
+		if (isCardinalityFeature(child.getParent().get())) {
+			return true;
+		} else {
+			return cardinalityFeatureAbove(child.getParent().get());
+		}
+	}
+
+	private boolean isCardinalityFeature(IFeatureTree node) {
+
+		if (node.getFeatureCardinalityUpperBound() > 1) {
+			return true;
+		}
+		return false;
+	}
+
+	private void handleGroups(Literal featureLiteral, IFeatureTree node, ArrayList<IFormula> constraints) {
+		List<Group> childrenGroups = node.getChildrenGroups();
+		int groupCount = childrenGroups.size();
+		ArrayList<List<IFormula>> groupLiterals = new ArrayList<>(groupCount);
+		for (int i = 0; i < groupCount; i++) {
+			groupLiterals.add(null);
+		}
+		List<? extends IFeatureTree> children = node.getChildren();
+		for (IFeatureTree childNode : children) {
+
+			String childLiteralName = getLiteralName(childNode);
+			if (childNode.getAttributeValue(literalNameAttribute).isEmpty())
+				childLiteralName += "." + getLiteralName(node);
+
+			Literal childLiteral = new Literal(childLiteralName);
+
+			if (childNode.isMandatory()) {
+				constraints.add(new Implies(featureLiteral, childLiteral));
+			}
+
+			int groupID = childNode.getParentGroupID();
+			List<IFormula> list = groupLiterals.get(groupID);
+			if (list == null) {
+				groupLiterals.set(groupID, list = new ArrayList<>());
+			}
+			list.add(childLiteral);
+		}
+		for (int i = 0; i < groupCount; i++) {
+			Group group = childrenGroups.get(i);
+			if (group != null) {
+				if (group.isOr()) {
+					constraints.add(new Implies(featureLiteral, new Or(groupLiterals.get(i))));
+				} else if (group.isAlternative()) {
+					constraints.add(new Implies(featureLiteral, new Choose(1, groupLiterals.get(i))));
+				} else {
+					int lowerBound = group.getLowerBound();
+					int upperBound = group.getUpperBound();
+					if (lowerBound > 0) {
+						if (upperBound != Range.OPEN) {
+							constraints.add(new Implies(featureLiteral,
+									new Between(lowerBound, upperBound, groupLiterals.get(i))));
+						} else {
+							constraints.add(new Implies(featureLiteral, new AtMost(upperBound, groupLiterals.get(i))));
+						}
+					} else {
+						if (upperBound != Range.OPEN) {
+							constraints.add(new Implies(featureLiteral, new AtLeast(lowerBound, groupLiterals.get(i))));
+						}
+					}
+				}
+			}
+		}
+	}
 
 }

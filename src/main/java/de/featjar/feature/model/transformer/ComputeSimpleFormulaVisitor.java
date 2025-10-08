@@ -142,6 +142,8 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 			featureLiteral = getNextNonCardinalityParent(node);
 		}
 		
+		
+		// TODO: check for cross-tree-constraints related to original feature and also copy it to match each newly created pseudo-literal
 		List<? extends IFeatureTree> children = node.getChildren();
 		for (IFeatureTree childNode : children) {
 			Literal childLiteral = Expressions.literal(childNode.getFeature().getName().orElse(""));
@@ -157,6 +159,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 			}
 			list.add(childLiteral);
 		}
+		
 		for (int i = 0; i < groupCount; i++) {
 			Group group = childrenGroups.get(i);
 			if (group != null) {
