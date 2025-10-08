@@ -83,7 +83,7 @@ public class ComputeFormula extends AComputation<IFormula> {
             } else if (feature.getType().equals(Integer.class)) {
                 featureLiteral = new NotEquals(variable, new Constant(0));
             } else if(feature.getType().equals(Float.class)) {
-                featureLiteral = new NotEquals(variable, new Constant(0.0));
+                featureLiteral = new NotEquals(variable, new Constant((float) 0.0));
             } else {
                 FeatJAR.log().warning("Could not handle type "+ feature.getType());
                 return;

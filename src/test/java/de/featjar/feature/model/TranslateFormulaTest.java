@@ -3,6 +3,7 @@ package de.featjar.feature.model;
 import de.featjar.base.FeatJAR;
 import de.featjar.base.computation.Computations;
 import de.featjar.base.data.identifier.Identifiers;
+import de.featjar.base.tree.Trees;
 import de.featjar.feature.model.transformer.ComputeFormula;
 import de.featjar.formula.structure.Expressions;
 import de.featjar.formula.structure.IFormula;
@@ -38,7 +39,7 @@ public class TranslateFormulaTest {
                 .map(ComputeFormula::new)
                 .compute();
         IFormula formula = buildFormula(Integer.class, 0);
-        Assertions.assertEquals(result.print(), formula.print());
+        Assertions.assertTrue(Trees.equals(result, formula), result.print() + "\n" + formula.print());
         FeatJAR.log().info("Integer Test expected value: " + formula.print());
         FeatJAR.log().info("Integer Test result output: " + result.print());
     }
@@ -52,7 +53,7 @@ public class TranslateFormulaTest {
                 .map(ComputeFormula::new)
                 .compute();
         IFormula formula = buildBooleanForumla();
-        Assertions.assertEquals(result.print(), formula.print());
+        Assertions.assertTrue(Trees.equals(result, formula), result.print() + "\n" + formula.print());
         FeatJAR.log().info("Boolean Test expected value: " + formula.print());
         FeatJAR.log().info("Boolean Test result output: " + result.print());
     }
@@ -66,7 +67,7 @@ public class TranslateFormulaTest {
                 .map(ComputeFormula::new)
                 .compute();
         IFormula formula = buildFormula(Float.class, (float) 0.0);
-        Assertions.assertEquals(result.print(), formula.print());
+        Assertions.assertTrue(Trees.equals(result, formula), result.print() + "\n" + formula.print());
         FeatJAR.log().info("Float Test expected value: " + formula.print());
         FeatJAR.log().info("Float Test result output: " + result.print());
     }
@@ -89,13 +90,13 @@ public class TranslateFormulaTest {
         return new Reference(new And(
                 Expressions.implies(new NotEquals(new Variable("feature0", type),
                         new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature1", Boolean.class),
+                Expressions.implies(new NotEquals(new Variable("feature1", type),
                         new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature2", Boolean.class),
+                Expressions.implies(new NotEquals(new Variable("feature2", type),
                         new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature3", Boolean.class),
+                Expressions.implies(new NotEquals(new Variable("feature3", type),
                         new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature4", Boolean.class),
+                Expressions.implies(new NotEquals(new Variable("feature4", type),
                         new Constant(expectedValue, type)), new Literal("root"))
         ));
     }
