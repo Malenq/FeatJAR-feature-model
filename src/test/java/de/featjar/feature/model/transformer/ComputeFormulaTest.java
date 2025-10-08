@@ -158,6 +158,51 @@ class ComputeFormulaTest {
     }
     
     @Test
+    void withCardinalityAndChildInbetweenRecursive() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+    	rootTree.mutate().toAndGroup();
+    	
+    	// create and set cardinality for the child feature
+    	IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        IFeatureTree childFeature1Tree2 = childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+        
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        IFeatureTree childFeature1Tree3 = childFeature1Tree2.mutate().addFeatureBelow(childFeature3);
+        childFeature1Tree3.mutate().setFeatureCardinality(Range.of(0, 2));
+       
+        
+        expected = new Reference(new And(
+        		new Literal("root"),
+        		new Implies(new Literal("A_1"), new Literal("root")),
+        		new Implies(new Literal("B.A_1"), new Literal("A_1")),
+        		new Implies(new Literal("C_1.B.A_1"), new Literal("B.A_1")),
+        		new Implies(new Literal("C_2.B.A_1"), new Literal("B.A_1")),
+        		new Implies(new Literal("C_2.B.A_1"), new Literal("C_1.B.A_1")),
+        		new Implies(new Literal("B.A_1"), new AtLeast(0, Arrays.asList(new Literal("C_1.B.A_1"), new Literal("C_2.B.A_1")))),
+        		
+        		new Implies(new Literal("A_2"), new Literal("root")),
+        		new Implies(new Literal("A_2"), new Literal("A_1")),
+        		new Implies(new Literal("B.A_2"), new Literal("A_2")),
+        		new Implies(new Literal("C_1.B.A_2"), new Literal("B.A_2")),
+        		new Implies(new Literal("C_2.B.A_2"), new Literal("B.A_2")),
+        		new Implies(new Literal("C_2.B.A_2"), new Literal("C_1.B.A_2")),
+        		new Implies(new Literal("B.A_2"), new AtLeast(0, Arrays.asList(new Literal("C_1.B.A_2"), new Literal("C_2.B.A_2")))),
+        		
+        		new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
+        		
+
+        		));
+    	
+        executeTest();  
+    	
+    }
+    
+    @Test
     void withCardinalityAndChildGroupRecursive() {
     	IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
@@ -308,8 +353,6 @@ class ComputeFormulaTest {
         
         IFeature childFeature3 = featureModel.mutate().addFeature("Test3");
         rootTree.mutate().addFeatureBelow(childFeature3);
-
-
     	
         executeTest();  
     }
