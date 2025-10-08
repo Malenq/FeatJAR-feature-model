@@ -103,12 +103,16 @@ public class ComputeFormula extends AComputation<IFormula> {
 		IFeatureModel temporaryFM = featureModel.clone();
 
 		for (IFeatureTree root : temporaryFM.getRoots()) {
-			constraints.add(new Literal(root.getFeature().getName().orElse("")));
-			addChildConstraints(root, constraints, temporaryFM);
+			
+			Literal rootLiteral = new Literal(root.getFeature().getName().orElse(""));
+			constraints.add(rootLiteral);
+			handleGroups(rootLiteral, root, constraints);
+			
+			addChildConstraints(root, constraints);
 		}
 	}
 
-	private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints, IFeatureModel fm) {
+	private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints) {
 
 		Literal parentLiteral = new Literal(getLiteralName(node));
 
@@ -148,7 +152,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 
 					constraintGroupLiterals.add(currentLiteral);
 
-					addChildConstraints(cardinalityClone, constraints, fm);
+					addChildConstraints(cardinalityClone, constraints);
 				}
 				// TODO: check if 0 and do not add then
 				constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, constraintGroupLiterals)));
@@ -171,7 +175,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 				// handle group
 				handleGroups(childFeatureLiteral, child, constraints);
 
-				addChildConstraints(child, constraints, fm);
+				addChildConstraints(child, constraints);
 			}
 		}
 	}
@@ -217,7 +221,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 		for (IFeatureTree childNode : children) {
 
 			String childLiteralName = getLiteralName(childNode);
-			if (childNode.getAttributeValue(literalNameAttribute).isEmpty())
+			if (childNode.getAttributeValue(literalNameAttribute).isEmpty() && cardinalityFeatureAbove(childNode))
 				childLiteralName += "." + getLiteralName(node);
 
 			Literal childLiteral = new Literal(childLiteralName);
