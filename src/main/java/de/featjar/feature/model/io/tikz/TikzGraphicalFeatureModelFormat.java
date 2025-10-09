@@ -3,15 +3,22 @@ package de.featjar.feature.model.io.tikz;
 import de.featjar.base.data.Problem;
 import de.featjar.base.data.Result;
 import de.featjar.base.io.format.IFormat;
-import de.featjar.base.io.format.ParseException;
-import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
+import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.format.TikzHeadFormat;
 import de.featjar.feature.model.io.tikz.format.TikzMainFormat;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class is moved from FeatureIDE to FeatJAR. The former class was written by Simon Wenk and Yang Liu.
+ * We did some changes, moved in different classes, and we rewrote some code and added new functions.
+ *
+ * @author Felix Behme
+ * @author Lara Merza
+ * @author Jonas Hanke
+ */
 public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
 
     public static String LINE_SEPERATOR  = System.lineSeparator();
@@ -20,31 +27,31 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
 
     private final StringBuilder stringBuilder;
     private final IFeatureModel featureModel;
+    private final boolean hasVerticalLayout;
     private final List<Problem> problemList;
 
-    public TikzGraphicalFeatureModelFormat(IFeatureModel featureModel) {
+    public TikzGraphicalFeatureModelFormat(IFeatureModel featureModel, boolean hasVerticalLayout) {
         this.stringBuilder = new StringBuilder();
         this.featureModel = featureModel;
         this.problemList = new ArrayList<>();
+        this.hasVerticalLayout = hasVerticalLayout;
     }
 
     public Result<String> serialize() {
         stringBuilder.append("\\documentclass[border=5pt]{standalone}");
         stringBuilder.append(LINE_SEPERATOR);
-        TikzHeadFormat.header(stringBuilder);
-        stringBuilder.append("\\begin{document}" + LINE_SEPERATOR + "	%---The Feature Diagram-----------------------------------------------------" + LINE_SEPERATOR);
-        new TikzMainFormat(featureModel, stringBuilder, problemList).printForest();
+        TikzHeadFormat.header(stringBuilder, problemList, hasVerticalLayout);
+        stringBuilder.append("\\begin{document}").append(LINE_SEPERATOR).append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
+        for (IFeatureTree featureTree : featureModel.getRoots()) {
+            new TikzMainFormat(featureTree, stringBuilder).write();
+        }
         stringBuilder.append(LINE_SEPERATOR);
-        stringBuilder.append("\t%---------------------------------------------------------------------------" + LINE_SEPERATOR + "\\end{document}");
-        return Result.of(stringBuilder.toString());
+        stringBuilder.append("\t%---------------------------------------------------------------------------").append(LINE_SEPERATOR).append("\\end{document}");
+        return Result.of(stringBuilder.toString(), problemList);
     }
 
     public IFeatureModel getFeatureModel() {
         return featureModel;
-    }
-
-    public StringBuilder getStringBuilder() {
-        return stringBuilder;
     }
 
     @Override
