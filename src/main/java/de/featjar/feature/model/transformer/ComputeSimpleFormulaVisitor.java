@@ -22,9 +22,10 @@ import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
 
 /**
- * 	This visitor implements a simple translation of IFeatureModel to boolean formula.
- * 	In this implementation, a cardinality feature can not be a parent. The next non-cardinality 
- * 	feature will be the parent instead within the boolean representation.
+ * This visitor implements a simple translation of IFeatureModel to boolean
+ * formula. In this implementation, a cardinality feature can not be a parent.
+ * The next non-cardinality feature will be the parent instead within the
+ * boolean representation.
  */
 public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, Void> {
 
@@ -57,7 +58,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 			handleCardinalityFeature(featureLiteral, node);
 		} else {
 			handleParent(featureLiteral, node);
-		} 
+		}
 
 		handleGroups(featureLiteral, node);
 
@@ -83,7 +84,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
 		ArrayList<IFormula> featureList = new ArrayList<IFormula>();
 
-		// step 2: add literals and implication to parent
+		// add literals and implication to parent
 		String literalName = "";
 		Literal parentLiteral = getNextNonCardinalityParent(node);
 		for (int i = 1; i <= upperBound; i++) {
@@ -93,7 +94,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 			handleParent(featureLiteral, node);
 
 			if (i > 1) {
-				// step 3: add to implication chain
+				// add to implication chain
 				IFormula previousLiteral = featureList.get(featureList.size() - 1);
 				constraints.add(new Implies(featureLiteral, previousLiteral));
 			}
@@ -101,31 +102,23 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 			featureList.add(featureLiteral);
 		}
 
-		// step 4: add cardinality constraint
-//		Literal parentLiteral = Expressions.literal(node.getParent().get().getFeature().getName().orElse(""));
-		
-		if (lowerBound > 0) {
-			if (upperBound != Range.OPEN) {
-				constraints.add(new Implies(parentLiteral, new Between(lowerBound, upperBound, featureList)));
-			} else {
-				constraints.add(new Implies(parentLiteral, new AtMost(upperBound, featureList)));
-			}
-		} else {
-			if (upperBound != Range.OPEN) {
-				constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, featureList)));
-			}
-		}
+		// add cardinality constraint
+		// check if 0 and do not add implication
+		if (lowerBound != 0)
+			constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, featureList)));
+
 	}
 
 	private Literal getNextNonCardinalityParent(IFeatureTree node) {
-		
-		// TODO: if it is possible that root can be as well a cardinality feature - there must be an alternative
+
+		// if it is possible that root can be as well a cardinality feature - there must
+		// be an alternative
 		node = node.getParent().get();
-		
+
 		if (node.getFeatureCardinalityUpperBound() > 1) {
 			return getNextNonCardinalityParent(node);
 		}
-		
+
 		return Expressions.literal(node.getFeature().getName().orElse(""));
 	}
 
@@ -136,14 +129,13 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 		for (int i = 0; i < groupCount; i++) {
 			groupLiterals.add(null);
 		}
-		
-		// if node is cardinality feature, set feature literal to parent with no cardinality
-		if(node.getFeatureCardinalityUpperBound() > 1) {
+
+		// if node is cardinality feature, set feature literal to parent with no
+		// cardinality
+		if (node.getFeatureCardinalityUpperBound() > 1) {
 			featureLiteral = getNextNonCardinalityParent(node);
 		}
-		
-		
-		// TODO: check for cross-tree-constraints related to original feature and also copy it to match each newly created pseudo-literal
+
 		List<? extends IFeatureTree> children = node.getChildren();
 		for (IFeatureTree childNode : children) {
 			Literal childLiteral = Expressions.literal(childNode.getFeature().getName().orElse(""));
@@ -159,7 +151,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 			}
 			list.add(childLiteral);
 		}
-		
+
 		for (int i = 0; i < groupCount; i++) {
 			Group group = childrenGroups.get(i);
 			if (group != null) {

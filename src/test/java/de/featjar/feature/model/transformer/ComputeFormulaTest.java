@@ -36,7 +36,6 @@ import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.connective.And;
-import de.featjar.formula.structure.connective.AtLeast;
 import de.featjar.formula.structure.connective.Between;
 import de.featjar.formula.structure.connective.Choose;
 import de.featjar.formula.structure.connective.Implies;
@@ -56,6 +55,7 @@ class ComputeFormulaTest {
 	@Test
 	void simpleWithTwoCardinalies() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		// create and set cardinality for the child feature
@@ -67,25 +67,21 @@ class ComputeFormulaTest {
 		IFeatureTree childFeature2Tree = childFeature1Tree.mutate().addFeatureBelow(childFeature2);
 		childFeature2Tree.mutate().setFeatureCardinality(Range.of(0, 2));
 
-		expected = new Reference(new And(
-        		new Literal("root"),
-				new Implies(new Literal("A_1"), new Literal("root")),
+		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("A_1")),
-				new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2")))),
 
 				new Implies(new Literal("B_1"), new Literal("root")),
 				new Implies(new Literal("B_2"), new Literal("root")),
-				new Implies(new Literal("B_2"), new Literal("B_1")), new Implies(new Literal("root"),
-						new AtLeast(0, Arrays.asList(new Literal("B_1"), new Literal("B_2"))))));
+				new Implies(new Literal("B_2"), new Literal("B_1"))));
 
 		executeSimpleTest();
-
 	}
 
 	@Test
 	void withTwoCardinalies() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		// create and set cardinality for the child feature
@@ -101,27 +97,20 @@ class ComputeFormulaTest {
 				new Implies(new Literal("B_1.A_1"), new Literal("A_1")),
 				new Implies(new Literal("B_2.A_1"), new Literal("A_1")),
 				new Implies(new Literal("B_2.A_1"), new Literal("B_1.A_1")),
-				new Implies(new Literal("A_1"),
-						new AtLeast(0, Arrays.asList(new Literal("B_1.A_1"), new Literal("B_2.A_1")))),
 
 				new Implies(new Literal("A_2"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("A_1")),
 				new Implies(new Literal("B_1.A_2"), new Literal("A_2")),
 				new Implies(new Literal("B_2.A_2"), new Literal("A_2")),
-				new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2")),
-				new Implies(new Literal("A_2"),
-						new AtLeast(0, Arrays.asList(new Literal("B_1.A_2"), new Literal("B_2.A_2")))),
-
-				new Implies(new Literal("root"),
-						new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))));
+				new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2"))));
 
 		executeTest();
-
 	}
 
 	@Test
 	void simpleWithCardinalityAndChildGroup() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		// create and set cardinality for the child feature
@@ -137,24 +126,21 @@ class ComputeFormulaTest {
 		IFeature childFeature3 = featureModel.mutate().addFeature("C");
 		childFeature1Tree.mutate().addFeatureBelow(childFeature3);
 
-		expected = new Reference(new And(
-        		new Literal("root"),
-				new Implies(new Literal("A_1"), new Literal("root")),
+		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("A_1")),
-				new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2")))),
 
 				new Implies(new Literal("root"), new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
 				new Implies(new Literal("B"), new Literal("root")),
 				new Implies(new Literal("C"), new Literal("root"))));
 
 		executeSimpleTest();
-
 	}
 
 	@Test
 	void withCardinalityAndChildInbetween() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		// create and set cardinality for the child feature
@@ -174,21 +160,13 @@ class ComputeFormulaTest {
 				new Implies(new Literal("C_1.B.A_1"), new Literal("B.A_1")),
 				new Implies(new Literal("C_2.B.A_1"), new Literal("B.A_1")),
 				new Implies(new Literal("C_2.B.A_1"), new Literal("C_1.B.A_1")),
-				new Implies(new Literal("B.A_1"),
-						new AtLeast(0, Arrays.asList(new Literal("C_1.B.A_1"), new Literal("C_2.B.A_1")))),
 
 				new Implies(new Literal("A_2"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("A_1")),
 				new Implies(new Literal("B.A_2"), new Literal("A_2")),
 				new Implies(new Literal("C_1.B.A_2"), new Literal("B.A_2")),
 				new Implies(new Literal("C_2.B.A_2"), new Literal("B.A_2")),
-				new Implies(new Literal("C_2.B.A_2"), new Literal("C_1.B.A_2")),
-				new Implies(new Literal("B.A_2"),
-						new AtLeast(0, Arrays.asList(new Literal("C_1.B.A_2"), new Literal("C_2.B.A_2")))),
-
-				new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
-
-		));
+				new Implies(new Literal("C_2.B.A_2"), new Literal("C_1.B.A_2"))));
 
 		executeTest();
 
@@ -197,44 +175,33 @@ class ComputeFormulaTest {
 	@Test
 	void withTwoGroups() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		IFeature childFeature1 = featureModel.mutate().addFeature("A");
-		IFeatureTree childFeatureTree1 = rootTree.mutate().addFeatureBelow(childFeature1);
+		rootTree.mutate().addFeatureBelow(childFeature1);
 
 		IFeature childFeature2 = featureModel.mutate().addFeature("B");
-		childFeatureTree1.addChild(rootTree.mutate().addFeatureBelow(childFeature2));
+		rootTree.mutate().addFeatureBelow(childFeature2);
 
-		childFeatureTree1.mutate().toAlternativeGroup();
+		rootTree.mutate().toAlternativeGroup();
+		int orGroupId = rootTree.mutate().addOrGroup();
 
 		IFeature childFeature3 = featureModel.mutate().addFeature("C");
-		IFeatureTree childFeatureTree2 = rootTree.mutate().addFeatureBelow(childFeature3);
+		IFeatureTree childFeatureTree3 = rootTree.mutate().addFeatureBelow(childFeature3);
+		childFeatureTree3.mutate().setParentGroupID(orGroupId);
 
 		IFeature childFeature4 = featureModel.mutate().addFeature("D");
-		childFeatureTree2.addChild(rootTree.mutate().addFeatureBelow(childFeature4));
+		IFeatureTree addFeatureBelow4 = rootTree.mutate().addFeatureBelow(childFeature4);
+		addFeatureBelow4.mutate().setParentGroupID(orGroupId);
 
-		childFeatureTree2.mutate().toOrGroup();
+		expected = new Reference(new And(new Literal("root"),
+				new Implies(new Literal("root"), new Choose(1, Arrays.asList(new Literal("A"), new Literal("B")))),
+				new Implies(new Literal("root"), new Or(Arrays.asList(new Literal("C"), new Literal("D")))),
 
-		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
-				new Implies(new Literal("B.A_1"), new Literal("A_1")),
-				new Implies(new Literal("C_1.B.A_1"), new Literal("B.A_1")),
-				new Implies(new Literal("C_2.B.A_1"), new Literal("B.A_1")),
-				new Implies(new Literal("C_2.B.A_1"), new Literal("C_1.B.A_1")),
-				new Implies(new Literal("B.A_1"),
-						new AtLeast(0, Arrays.asList(new Literal("C_1.B.A_1"), new Literal("C_2.B.A_1")))),
-
-				new Implies(new Literal("A_2"), new Literal("root")),
-				new Implies(new Literal("A_2"), new Literal("A_1")),
-				new Implies(new Literal("B.A_2"), new Literal("A_2")),
-				new Implies(new Literal("C_1.B.A_2"), new Literal("B.A_2")),
-				new Implies(new Literal("C_2.B.A_2"), new Literal("B.A_2")),
-				new Implies(new Literal("C_2.B.A_2"), new Literal("C_1.B.A_2")),
-				new Implies(new Literal("B.A_2"),
-						new AtLeast(0, Arrays.asList(new Literal("C_1.B.A_2"), new Literal("C_2.B.A_2")))),
-
-				new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
-
-		));
+				new Implies(new Literal("A"), new Literal("root")), new Implies(new Literal("B"), new Literal("root")),
+				new Implies(new Literal("C"), new Literal("root")),
+				new Implies(new Literal("D"), new Literal("root"))));
 
 		executeTest();
 
@@ -243,6 +210,7 @@ class ComputeFormulaTest {
 	@Test
 	void withCardinalityAndChildGroup() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		// create and set cardinality for the child feature
@@ -269,10 +237,7 @@ class ComputeFormulaTest {
 				new Implies(new Literal("A_2"),
 						new Choose(1, Arrays.asList(new Literal("B.A_2"), new Literal("C.A_2")))),
 				new Implies(new Literal("B.A_2"), new Literal("A_2")),
-				new Implies(new Literal("C.A_2"), new Literal("A_2")),
-
-				new Implies(new Literal("root"),
-						new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))));
+				new Implies(new Literal("C.A_2"), new Literal("A_2"))));
 
 		executeTest();
 	}
@@ -280,6 +245,7 @@ class ComputeFormulaTest {
 	@Test
 	void withCardinalityAndChildChildGroup() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		// create and set cardinality for the child feature
@@ -326,12 +292,7 @@ class ComputeFormulaTest {
 				new Implies(new Literal("C.A_2"),
 						new Or(Arrays.asList(new Literal("D.C.A_2"), new Literal("E.C.A_2")))),
 				new Implies(new Literal("D.C.A_2"), new Literal("C.A_2")),
-				new Implies(new Literal("E.C.A_2"), new Literal("C.A_2")),
-
-				new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
-
-		// missing
-		));
+				new Implies(new Literal("E.C.A_2"), new Literal("C.A_2"))));
 
 		executeTest();
 	}
@@ -340,7 +301,7 @@ class ComputeFormulaTest {
 	void onlyRoot() {
 
 		// root and nothing else
-		featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root")).mutate().makeMandatory();
 
 		// root must be selected
 		expected = new Reference(new And(new Literal("root")));
@@ -353,15 +314,13 @@ class ComputeFormulaTest {
 
 		// root
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
-
-		// TODO: check if setting root feature is missing here or if compute misses
-		// adding root feature literal
 
 		// create and add our only child
 		IFeature childFeature = featureModel.mutate().addFeature("Test1");
 		rootTree.mutate().addFeatureBelow(childFeature);
-		
+
 		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("Test1"), new Literal("root"))));
 
 		executeTest();
@@ -370,6 +329,7 @@ class ComputeFormulaTest {
 	@Test
 	void withCardinalityGroup() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toCardinalityGroup(Range.of(2, 3));
 
 		// create and set cardinality for the child feature
@@ -394,6 +354,7 @@ class ComputeFormulaTest {
 	@Test
 	void withOneCardinalityFeature() {
 		IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+		rootTree.mutate().makeMandatory();
 		rootTree.mutate().toAndGroup();
 
 		// create and set cardinality for the child feature
@@ -409,11 +370,7 @@ class ComputeFormulaTest {
 				new Implies(new Literal("B.A_1"), new Literal("A_1")),
 				new Implies(new Literal("A_2"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("A_1")),
-				new Implies(new Literal("B.A_2"), new Literal("A_2")),
-
-				new Implies(new Literal("root"), new AtLeast(0, Arrays.asList(new Literal("A_1"), new Literal("A_2"))))
-
-		));
+				new Implies(new Literal("B.A_2"), new Literal("A_2"))));
 
 		executeTest();
 	}

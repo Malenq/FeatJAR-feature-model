@@ -59,7 +59,6 @@ public class ComputeFormula extends AComputation<IFormula> {
 	protected static final Dependency<Boolean> SIMPLE_TRANSLATION = Dependency.newDependency(Boolean.class);
 
 	static Attribute<String> literalNameAttribute = new Attribute<>("literalName", String.class);
-//	protected boolean traverseRecursive = false;
 
 	public ComputeFormula(IComputation<IFeatureModel> formula) {
 		super(formula, Computations.of(Boolean.FALSE));
@@ -69,10 +68,6 @@ public class ComputeFormula extends AComputation<IFormula> {
 		super(other);
 	}
 
-//	public void setRecursive() {
-//		traverseRecursive = true;
-//	}
-
 	@Override
 	public Result<IFormula> compute(List<Object> dependencyList, Progress progress) {
 		IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
@@ -81,15 +76,11 @@ public class ComputeFormula extends AComputation<IFormula> {
 
 		IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
 
-//		if (traverseRecursive) {
-//		} else {
 		if (SIMPLE_TRANSLATION.get(dependencyList)) {
 			Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));
 		} else {
 			traverseFeatureModel(featureModel, constraints, variables);
-//				Trees.traverse(iFeatureTree, new ComputeFormulaVisitor(constraints, variables));
 		}
-//		}
 
 		Reference reference = new Reference(new And(constraints));
 		reference.setFreeVariables(variables);
@@ -99,13 +90,12 @@ public class ComputeFormula extends AComputation<IFormula> {
 	private void traverseFeatureModel(IFeatureModel featureModel, ArrayList<IFormula> constraints,
 			HashSet<Variable> variables) {
 
-		// copy FM to not change the original one
-		IFeatureModel temporaryFM = featureModel.clone();
-
-		for (IFeatureTree root : temporaryFM.getRoots()) {
+		for (IFeatureTree root : featureModel.getRoots()) {
 			
 			Literal rootLiteral = new Literal(root.getFeature().getName().orElse(""));
-			constraints.add(rootLiteral);
+			if(root.isMandatory()) {				
+				constraints.add(rootLiteral);
+			}
 			handleGroups(rootLiteral, root, constraints);
 			
 			addChildConstraints(root, constraints);
@@ -132,10 +122,9 @@ public class ComputeFormula extends AComputation<IFormula> {
 						literalName += "." + getLiteralName(node);
 					}
 
+					// clone only tree for traversal, not its children
 					IFeatureTree cardinalityClone = child.cloneTree();
 					cardinalityClone.mutate().setAttributeValue(literalNameAttribute, literalName);
-
-//					node.addChild(cardinalityClone);
 
 					Literal currentLiteral = new Literal(literalName);
 
@@ -154,8 +143,9 @@ public class ComputeFormula extends AComputation<IFormula> {
 
 					addChildConstraints(cardinalityClone, constraints);
 				}
-				// TODO: check if 0 and do not add then
-				constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, constraintGroupLiterals)));
+				// check if 0 and do not add implication
+				if(lowerBound != 0)
+					constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, constraintGroupLiterals)));
 
 				return;
 			} else {
