@@ -1,5 +1,10 @@
 package de.featjar.feature.model.io.tikz.color;
 
+/**
+ * @author Felix Behme
+ * @author Lara Merza
+ * @author Jonas Hanke
+ */
 public enum FeatureColor {
 
     RED("redColor"),
