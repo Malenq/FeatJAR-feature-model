@@ -1,7 +1,6 @@
 package de.featjar.feature.model.io.tikz;
 
 import de.featjar.base.FeatJAR;
-import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.*;
 import de.featjar.formula.structure.connective.*;
@@ -32,6 +31,7 @@ public class FeatureModelDisplayTikzTest {
 
         IFeature feature = featureModel.mutate().addFeature("Feature");
         IFeatureTree firstFeatureTree = rootTree.mutate().addFeatureBelow(feature);
+        firstFeatureTree.mutate().toOrGroup();
 
         IFeature world = featureModel.mutate().addFeature("World");
         rootTree.mutate().addFeatureBelow(world);
@@ -44,7 +44,7 @@ public class FeatureModelDisplayTikzTest {
 
         // Second Tree
 
-        IFeatureTree rootTreeSec =
+        /*IFeatureTree rootTreeSec =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("Hello2"));
         rootTree.mutate().toAndGroup();
 
@@ -76,6 +76,8 @@ public class FeatureModelDisplayTikzTest {
 
         IFeature childFeature3 = featureModel.mutate().addFeature("C");
         childFeature1Tree.mutate().addFeatureBelow(childFeature3);
+
+         */
 
         FeatureModelDisplayTikzTest.featureModel = featureModel;
     }

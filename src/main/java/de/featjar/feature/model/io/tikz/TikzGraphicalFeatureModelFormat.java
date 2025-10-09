@@ -43,7 +43,7 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
         TikzHeadFormat.header(stringBuilder, problemList, hasVerticalLayout);
         stringBuilder.append("\\begin{document}").append(LINE_SEPERATOR).append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
         for (IFeatureTree featureTree : featureModel.getRoots()) {
-            new TikzMainFormat(featureTree, stringBuilder).write();
+            new TikzMainFormat(featureModel, featureTree, stringBuilder).write();
         }
         stringBuilder.append(LINE_SEPERATOR);
         stringBuilder.append("\t%---------------------------------------------------------------------------").append(LINE_SEPERATOR).append("\\end{document}");

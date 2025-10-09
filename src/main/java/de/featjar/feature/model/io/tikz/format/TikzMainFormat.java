@@ -1,5 +1,7 @@
 package de.featjar.feature.model.io.tikz.format;
 
+import de.featjar.feature.model.IFeature;
+import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
 
@@ -7,10 +9,12 @@ public class TikzMainFormat implements IGraphicalFormat{
 
     private final boolean[] LEGEND = new boolean[7];
 
+    private final IFeatureModel featureModel;
     private final IFeatureTree featureTree;
     private final StringBuilder stringBuilder;
 
-    public TikzMainFormat(IFeatureTree featureTree, StringBuilder stringBuilder) {
+    public TikzMainFormat(IFeatureModel featureModel ,IFeatureTree featureTree, StringBuilder stringBuilder) {
+        this.featureModel = featureModel;
         this.featureTree = featureTree;
         this.stringBuilder = stringBuilder;
     }
@@ -20,15 +24,7 @@ public class TikzMainFormat implements IGraphicalFormat{
         printForest();
     }
 
-    /*private void insertNodeHead(String featureName) {
-        stringBuilder.append("[").append(featureName);
-        IFeature feature = featureModel.getFeature(featureName).orElse(null);
-
-        if (feature == null) {
-            problemList.add(new Problem("The feature " + featureName + " is null"));
-            return;
-        }
-
+    private void insertNodeHead(IFeature feature) {
         if (feature.isAbstract()) {
             stringBuilder.append(",abstract");
             LEGEND[0] = true;
@@ -48,8 +44,24 @@ public class TikzMainFormat implements IGraphicalFormat{
                 LEGEND[3] = true;
             }
         }
+
+        if (!isRootFeature(feature)) {
+            if (feature.getFeatureTree().get().getParentGroup().get().isOr()) {
+                stringBuilder.append(",or");
+                LEGEND[4] = true;
+            }
+        }
+        if (!isRootFeature(feature)) {
+            if (feature.getFeatureTree().get().getParentGroup().get().isAlternative()) {
+                stringBuilder.append(",alternative");
+                LEGEND[5] = true;
+            }
+        }
     }
-     */
+
+    private boolean isRootFeature(IFeature feature) {
+        return featureModel.getRootFeatures().contains(feature);
+    }
 
     /**
      * A Feature is allowed to have a tree. This method checks the children and add them to the StringBuilder
@@ -58,7 +70,10 @@ public class TikzMainFormat implements IGraphicalFormat{
      * @param featureTree (the part tree of the feature)
      */
     private void printTree(IFeatureTree featureTree) {
-        stringBuilder.append("[").append(featureTree.getFeature().getName().get());
+        IFeature feature = featureTree.getFeature();
+        //insertNodeHead(feature.getName().get());
+        stringBuilder.append("[").append(feature.getName().get());
+        insertNodeHead(feature);
         for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
             printTree(featureTreeChildren);
         }
@@ -69,17 +84,20 @@ public class TikzMainFormat implements IGraphicalFormat{
      * Build the complete tree of the FeatureModel.
      */
     private void printForest() {
+        IFeature feature = featureTree.getFeature();
+
         stringBuilder.append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
-        stringBuilder.append("[").append(featureTree.getFeature().getName().get());
+        stringBuilder.append("[").append(feature.getName().get());
+        insertNodeHead(feature);
         for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
             printTree(featureTreeChildren);
         }
         stringBuilder.append("]");
         postProcessing();
         stringBuilder.append("\t").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-        /*if (!object.isLegendHidden()) {
-            printLegend(str, object);
-        }*/
+        if (!featureTree.getFeature().isHidden()) { // todo: fix error
+            printLegend();                          // todo
+        }                                           // todo
         //printConstraints(str, object);
         stringBuilder.append("\\end{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
     }
@@ -91,85 +109,32 @@ public class TikzMainFormat implements IGraphicalFormat{
         stringBuilder.replace(0, stringBuilder.length(), stringBuilder.toString().replace("_", "\\_"));
     }
 
-   /* private void printLegend() {
-        boolean check = false;
-        final StringBuilder sb = new StringBuilder();
-        if (LEGEND[0] && LEGEND[1]) {
-            check = true;
-            sb.append("		\\node [abstract,label=right:Abstract Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            LEGEND[0] = false;
-            sb.append("		\\node [concrete,label=right:Concrete Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            LEGEND[1] = false;
-        }
-        if (LEGEND[0]) {
-            check = true;
-            sb.append("		\\node [abstract,label=right:Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            LEGEND[0] = false;
-        }
-        if (LEGEND[1]) {
-            check = true;
-            sb.append("		\\node [concrete,label=right:Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            LEGEND[1] = false;
-        }
-        if (LEGEND[2]) {
-            check = true;
-            sb.append("		\\node [mandatory,label=right:Mandatory] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            LEGEND[2] = false;
-        }
-        if (LEGEND[3]) {
-            check = true;
-            sb.append("		\\node [optional,label=right:Optional] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            LEGEND[3] = false;
-        }
-        if (LEGEND[4]) {
-            check = true;
-            // myString.append(" \\filldraw[drawColor] (0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2]; " + lnSep
-            // + " \\node [or,label=right:Or] {}; \\\\" + lnSep);
-            sb.append("			\\filldraw[drawColor] (0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(0.2,-0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\fill[drawColor] (0,-0.2) arc (240:300:0.2);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [or,label=right:Or Group] {}; \\\\");
-            LEGEND[4] = false;
-        }
-        if (LEGEND[5]) {
-            check = true;
-            // myString.append(" \\draw[drawColor] (0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2] -- cycle; " + lnSep
-            // + " \\node [alternative,label=right:Alternative] {}; \\\\" + lnSep);
-            sb.append("			\\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(0.2,-0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0,-0.2) arc (240:300:0.2);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [alternative,label=right:Alternative Group] {}; \\\\");
-            LEGEND[5] = false;
-        }
-        if (LEGEND[6]) {
-            check = true;
-            sb.append("		\\node [hiddenNodes,label=center:1,label=right:Collapsed Nodes] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            LEGEND[6] = false;
-        }
-/*Color
-        final ColorScheme colorScheme = FeatureColorManager.getCurrentColorScheme(graphicalFeatureModel.getFeatureModelManager().getSnapshot());
-        int colorIndex = 1;
+    private void printLegend() {
 
-        for (final FeatureColor currentColor : new HashSet<>(colorScheme.getColors().values())) {
-            if (currentColor != FeatureColor.NO_COLOR) {
-                String meaning = currentColor.getMeaning();
-                if (meaning.isEmpty()) {
-                    meaning = "Custom Color " + String.format("%02d", colorIndex);
-                    colorIndex++;
-                }
-                sb.append("		\\node [" + featureColorToTikzStyle(currentColor) + ",label=right:" + meaning + "] {}; \\\\" + lnSep);
-            }
-        }
+            stringBuilder.append("		\\node [abstract,label=right:Abstract Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
 
+            stringBuilder.append("		\\node [concrete,label=right:Concrete Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
 
+            stringBuilder.append("		\\node [abstract,label=right:Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
 
-        if (check) {
+            stringBuilder.append("		\\node [concrete,label=right:Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+
+            stringBuilder.append("		\\node [mandatory,label=right:Mandatory] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+
+            stringBuilder.append("		\\node [optional,label=right:Optional] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+
+            stringBuilder.append("			\\filldraw[drawColor] (0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(0.2,-0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\fill[drawColor] (0,-0.2) arc (240:300:0.2);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [or,label=right:Or Group] {}; \\\\");
+
+            stringBuilder.append("			\\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(0.2,-0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0,-0.2) arc (240:300:0.2);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [alternative,label=right:Alternative Group] {}; \\\\");
+
+            stringBuilder.append("		\\node [hiddenNodes,label=center:1,label=right:Collapsed Nodes] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+
             stringBuilder.append("	\\matrix [anchor=north west] at (current bounding box.north east) {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [placeholder] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("	};").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("	\\matrix [draw=drawColor,anchor=north west] at (current bounding box.north east) {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [label=center:\\underline{Legend:}] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            stringBuilder.append(sb);
             stringBuilder.append("	};").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            check = false;
-        } else {
-            for (int i = 0; i < LEGEND.length; ++i) {
-                LEGEND[i] = false;
-            }
-            check = false;
-        }
+
+
     }
-    */
+
 
     /*private void printConstraints() {
         stringBuilder.append("	\\matrix [below=1mm of current bounding box] {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
