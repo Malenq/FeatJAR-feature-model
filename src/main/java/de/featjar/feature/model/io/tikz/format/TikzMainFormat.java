@@ -1,26 +1,18 @@
 package de.featjar.feature.model.io.tikz.format;
 
-import de.featjar.base.data.Problem;
-import de.featjar.feature.model.IConstraint;
-import de.featjar.feature.model.IFeature;
-import de.featjar.feature.model.IFeatureModel;
+import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
-
-import java.util.HashSet;
-import java.util.List;
 
 public class TikzMainFormat implements IGraphicalFormat{
 
     private final boolean[] LEGEND = new boolean[7];
 
-    private final IFeatureModel featureModel;
+    private final IFeatureTree featureTree;
     private final StringBuilder stringBuilder;
-    private final List<Problem> problemList;
 
-    public TikzMainFormat(IFeatureModel featureModel, StringBuilder stringBuilder, List<Problem> problemList) {
-        this.featureModel = featureModel;
+    public TikzMainFormat(IFeatureTree featureTree, StringBuilder stringBuilder) {
+        this.featureTree = featureTree;
         this.stringBuilder = stringBuilder;
-        this.problemList = problemList;
     }
 
     @Override
@@ -28,32 +20,7 @@ public class TikzMainFormat implements IGraphicalFormat{
         printForest();
     }
 
-    @Override
-    public boolean supportWirte() {
-        return true;
-    }
-
-    @Override
-    public boolean supportRead() {
-        return false;
-    }
-
-    @Override
-    public String getSuffix() {
-        return ".tex";
-    }
-
-    @Override
-    public String getName() {
-        return "LaTeX-Document with TikZ";
-    }
-
-    @Override
-    public String getId() {
-        return "";
-    }
-
-    private void insertNodeHead(String featureName) {
+    /*private void insertNodeHead(String featureName) {
         stringBuilder.append("[").append(featureName);
         IFeature feature = featureModel.getFeature(featureName).orElse(null);
 
@@ -82,43 +49,49 @@ public class TikzMainFormat implements IGraphicalFormat{
             }
         }
     }
+     */
 
-    private boolean isRootFeature(IFeature feature) {
-        return featureModel.getRootFeatures().contains(feature);
-    }
-
-    private void insertNodeTail() {
+    /**
+     * A Feature is allowed to have a tree. This method checks the children and add them to the StringBuilder
+     * in LateX (.tex) style.
+     *
+     * @param featureTree (the part tree of the feature)
+     */
+    private void printTree(IFeatureTree featureTree) {
+        stringBuilder.append("[").append(featureTree.getFeature().getName().get());
+        for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
+            printTree(featureTreeChildren);
+        }
         stringBuilder.append("]");
     }
 
-    private void printTree() {
-
-    }
-
-    private int countFeatures() {
-        return featureModel.getFeatures().size();
-        //return -1; // todo: change later
-    }
-
-    private String getRoot() {
-        return "-1"; // todo: change later
-    }
-
-    public void printForest() {
-        stringBuilder.append("\\begin{forest}" + TikzGraphicalFeatureModelFormat.LINE_SEPERATOR + "\tfeatureDiagram" + TikzGraphicalFeatureModelFormat.LINE_SEPERATOR + "\t");
-        //printTree(getRoot(object), object, treeStringBuilder);
-        //postProcessing(treeStringBuilder);
+    /**
+     * Build the complete tree of the FeatureModel.
+     */
+    private void printForest() {
+        stringBuilder.append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
+        stringBuilder.append("[").append(featureTree.getFeature().getName().get());
+        for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
+            printTree(featureTreeChildren);
+        }
+        stringBuilder.append("]");
+        postProcessing();
         stringBuilder.append("\t").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
         /*if (!object.isLegendHidden()) {
             printLegend(str, object);
-        }
-
-         */
+        }*/
         //printConstraints(str, object);
-        stringBuilder.append("\\end{forest}");
+        stringBuilder.append("\\end{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
     }
 
-    private void printLegend() {
+    /**
+     * Processes a String to make special symbols LaTeX compatible.
+     */
+    private void postProcessing() {
+        stringBuilder.replace(0, stringBuilder.length(), stringBuilder.toString().replace("_", "\\_"));
+    }
+
+   /* private void printLegend() {
         boolean check = false;
         final StringBuilder sb = new StringBuilder();
         if (LEGEND[0] && LEGEND[1]) {
@@ -182,7 +155,7 @@ public class TikzMainFormat implements IGraphicalFormat{
             }
         }
 
- */
+
 
         if (check) {
             stringBuilder.append("	\\matrix [anchor=north west] at (current bounding box.north east) {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [placeholder] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("	};").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("	\\matrix [draw=drawColor,anchor=north west] at (current bounding box.north east) {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [label=center:\\underline{Legend:}] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
@@ -196,8 +169,9 @@ public class TikzMainFormat implements IGraphicalFormat{
             check = false;
         }
     }
+    */
 
-    private void printConstraints() {
+    /*private void printConstraints() {
         stringBuilder.append("	\\matrix [below=1mm of current bounding box] {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
         for (IConstraint constraint : featureModel.getConstraints()) {
             String text = constraint.getFormula().print();
@@ -213,8 +187,7 @@ public class TikzMainFormat implements IGraphicalFormat{
             str.append("	\\node {\\(" + text + "\\)}; \\\\" + lnSep);
         }
         str.append("	};" + lnSep);
-
-         */
     }
+     */
 
 }

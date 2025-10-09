@@ -28,28 +28,4 @@ public class TikzBodyFormat implements IGraphicalFormat{
         stringBuilder.append("\\end{document}");
     }
 
-    @Override
-    public boolean supportWirte() {
-        return true;
-    }
-
-    @Override
-    public boolean supportRead() {
-        return false;
-    }
-
-    @Override
-    public String getSuffix() {
-        return ".tex";
-    }
-
-    @Override
-    public String getName() {
-        return "LaTeX-Document with TikZ";
-    }
-
-    @Override
-    public String getId() {
-        return "";
-    }
 }

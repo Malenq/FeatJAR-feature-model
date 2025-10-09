@@ -4,14 +4,4 @@ public interface IGraphicalFormat {
 
     void write();
 
-    boolean supportWirte();
-
-    boolean supportRead();
-
-    String getSuffix();
-
-    String getName();
-
-    String getId();
-
 }
