@@ -1,6 +1,7 @@
 package de.featjar.feature.model.io.tikz;
 
 import de.featjar.base.FeatJAR;
+import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.*;
 import de.featjar.formula.structure.connective.*;
@@ -24,9 +25,11 @@ public class FeatureModelDisplayTikzTest {
 
         FeatureModel featureModel = new FeatureModel(Identifiers.newCounterIdentifier());
 
+        IFeature featureRootS = featureModel.mutate().addFeature("Hello");
+        featureRootS.mutate().setAbstract();
         // First Tree
         IFeatureTree rootTree =
-                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("Hello"));
+                featureModel.mutate().addFeatureTreeRoot(featureRootS);
         rootTree.mutate().toAndGroup();
 
         IFeature feature = featureModel.mutate().addFeature("Feature");
@@ -44,28 +47,11 @@ public class FeatureModelDisplayTikzTest {
 
         // Second Tree
 
-        /*IFeatureTree rootTreeSec =
-                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("Hello2"));
-        rootTree.mutate().toAndGroup();
-
-        IFeature feature2 = featureModel.mutate().addFeature("Feature2");
-        rootTreeSec.mutate().addFeatureBelow(feature2);
-
-        IFeature world2 = featureModel.mutate().addFeature("World2");
-        IFeatureTree firstFeatureTree2 = rootTreeSec.mutate().addFeatureBelow(world2);
-
-        IFeature wonderful2 = featureModel.addFeature("Wonderful2");
-        firstFeatureTree2.mutate().addFeatureBelow(wonderful2);
-
-        IFeature beautiful2 = featureModel.addFeature("Beautiful2");
-        firstFeatureTree2.mutate().addFeatureBelow(beautiful2);
-
-        // Thrid Tree
-
         IFeatureTree rootTree3 = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
         rootTree3.mutate().toAndGroup();
 
         IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        childFeature1.mutate().setAbstract();
         IFeatureTree childFeature1Tree = rootTree3.mutate().addFeatureBelow(childFeature1);
         childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
 
@@ -76,8 +62,6 @@ public class FeatureModelDisplayTikzTest {
 
         IFeature childFeature3 = featureModel.mutate().addFeature("C");
         childFeature1Tree.mutate().addFeatureBelow(childFeature3);
-
-         */
 
         FeatureModelDisplayTikzTest.featureModel = featureModel;
     }
