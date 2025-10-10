@@ -5,6 +5,11 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * @author Felix Behme
+ * @author Lara Merza
+ * @author Jonas Hanke
+ */
 public class TikzHeadFormat {
 
     public static void header(StringBuilder stringBuilder, List<Problem> problemList, boolean hasVerticalLayout) {

@@ -4,10 +4,18 @@ import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
+import de.featjar.feature.model.io.tikz.helper.MatrixHelper;
+import de.featjar.feature.model.io.tikz.helper.MatrixType;
 
+/**
+ * @author Felix Behme
+ * @author Lara Merza
+ * @author Jonas Hanke
+ */
 public class TikzMainFormat implements IGraphicalFormat{
 
     private final boolean[] LEGEND = new boolean[7];
+    private boolean check = false;
 
     private final IFeatureModel featureModel;
     private final IFeatureTree featureTree;
@@ -28,10 +36,12 @@ public class TikzMainFormat implements IGraphicalFormat{
         if (feature.isAbstract()) {
             stringBuilder.append(",abstract");
             LEGEND[0] = true;
+            check = true;
         }
         if (feature.isConcrete()) {
             stringBuilder.append(",concrete");
             LEGEND[1] = true;
+            check = true;
         }
 
         if (!isRootFeature(feature) && feature.getFeatureTree().isPresent()
@@ -39,9 +49,11 @@ public class TikzMainFormat implements IGraphicalFormat{
             if (feature.getFeatureTree().get().isMandatory()) {
                 stringBuilder.append(",mandatory");
                 LEGEND[2] = true;
+                check = true;
             } else {
                 stringBuilder.append(",optional");
                 LEGEND[3] = true;
+                check = true;
             }
         }
 
@@ -49,12 +61,14 @@ public class TikzMainFormat implements IGraphicalFormat{
             if (feature.getFeatureTree().get().getParentGroup().get().isOr()) {
                 stringBuilder.append(",or");
                 LEGEND[4] = true;
+                check = true;
             }
         }
         if (!isRootFeature(feature)) {
             if (feature.getFeatureTree().get().getParentGroup().get().isAlternative()) {
                 stringBuilder.append(",alternative");
                 LEGEND[5] = true;
+                check = true;
             }
         }
     }
@@ -95,9 +109,9 @@ public class TikzMainFormat implements IGraphicalFormat{
         stringBuilder.append("]");
         postProcessing();
         stringBuilder.append("\t").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-        if (!featureTree.getFeature().isHidden()) { // todo: fix error
-            printLegend();                          // todo
-        }                                           // todo
+        if (!featureTree.getFeature().isHidden()) {
+            printLegend();
+        }
         //printConstraints(str, object);
         stringBuilder.append("\\end{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
     }
@@ -110,29 +124,62 @@ public class TikzMainFormat implements IGraphicalFormat{
     }
 
     private void printLegend() {
+        if (!check) {
+            return;
+        }
 
-            stringBuilder.append("		\\node [abstract,label=right:Abstract Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+        MatrixHelper matrixHelper = getMatrixHelper();
 
-            stringBuilder.append("		\\node [concrete,label=right:Concrete Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+        if (LEGEND[4]) {
+            matrixHelper
+                    .writeFillDraw("filldraw[drawColor] (0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2]")
+                    .writeNode("[or,label=right:Or] {}")
+                    .writeFillDraw("(0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0)")
+                    .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
+                    .writeDraw("(0.1,0) -- +(0.2,-0.4)")
+                    .writeFill("(0,-0.2) arc (240:300:0.2)")
+                    .writeNode("[or,label=right:Or Group] {}");
+        }
 
-            stringBuilder.append("		\\node [abstract,label=right:Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+        if (LEGEND[5]) {
+            matrixHelper
+                    .writeDraw("(0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2] -- cycle")
+                    .writeNode("[alternative,label=right:Alternative] {}")
+                    .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
+                    .writeDraw("(0.1,0) -- +(0.2,-0.4)")
+                    .writeDraw("(0,-0.2) arc (240:300:0.2)")
+                    .writeNode("[alternative,label=right:Alternative Group] {}");
+        }
 
-            stringBuilder.append("		\\node [concrete,label=right:Feature] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+        stringBuilder.append(matrixHelper.build());
+    }
 
-            stringBuilder.append("		\\node [mandatory,label=right:Mandatory] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+    private MatrixHelper getMatrixHelper() {
+        MatrixHelper matrixHelper = new MatrixHelper(MatrixType.LEGEND);
+        boolean abstractConcreteExists = false;
 
-            stringBuilder.append("		\\node [optional,label=right:Optional] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+        if (LEGEND[0] && LEGEND[1]) {
+            abstractConcreteExists = true;
+            matrixHelper.writeNode("[abstract,label=right:Abstract Feature] {}");
+            matrixHelper.writeNode("[concrete,label=right:Concrete Feature] {}");
+        }
 
-            stringBuilder.append("			\\filldraw[drawColor] (0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(0.2,-0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\fill[drawColor] (0,-0.2) arc (240:300:0.2);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [or,label=right:Or Group] {}; \\\\");
+        if (LEGEND[0] && !abstractConcreteExists) {
+            matrixHelper.writeNode("[abstract,label=right:Feature] {}");
+        }
 
-            stringBuilder.append("			\\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0.1,0) -- +(0.2,-0.4);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("			\\draw[drawColor] (0,-0.2) arc (240:300:0.2);").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [alternative,label=right:Alternative Group] {}; \\\\");
+        if (LEGEND[1] && !abstractConcreteExists) {
+            matrixHelper.writeNode("[concrete,label=right:Feature] {}");
+        }
 
-            stringBuilder.append("		\\node [hiddenNodes,label=center:1,label=right:Collapsed Nodes] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+        if (LEGEND[2]) {
+            matrixHelper.writeNode("[mandatory,label=right:Mandatory] {}");
+        }
 
-            stringBuilder.append("	\\matrix [anchor=north west] at (current bounding box.north east) {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [placeholder] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("	};").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("	\\matrix [draw=drawColor,anchor=north west] at (current bounding box.north east) {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("		\\node [label=center:\\underline{Legend:}] {}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-            stringBuilder.append("	};").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-
-
+        if (LEGEND[3]) {
+            matrixHelper.writeNode("[optional,label=right:Optional] {}");
+        }
+        return matrixHelper;
     }
 
 
