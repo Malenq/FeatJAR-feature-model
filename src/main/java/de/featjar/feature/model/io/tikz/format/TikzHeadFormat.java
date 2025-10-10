@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
+ * This class prints the header of a LaTex document containing the Tikz definitions.
+ *
  * @author Felix Behme
  * @author Lara Merza
  * @author Jonas Hanke

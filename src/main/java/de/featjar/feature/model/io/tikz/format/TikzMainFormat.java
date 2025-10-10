@@ -2,24 +2,23 @@ package de.featjar.feature.model.io.tikz.format;
 
 import de.featjar.base.tree.Trees;
 import de.featjar.feature.model.IConstraint;
-import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
 import de.featjar.feature.model.io.tikz.helper.MatrixHelper;
 import de.featjar.feature.model.io.tikz.helper.MatrixType;
+import de.featjar.feature.model.io.tikz.helper.PrintVisitor;
 import de.featjar.formula.io.textual.ExpressionSerializer;
 import de.featjar.formula.io.textual.LaTexSymbols;
 
 /**
+ * This class generates the Tikz representation of a {@link IFeatureModel} including all constraints ({@link IConstraint}).
+ *
  * @author Felix Behme
  * @author Lara Merza
  * @author Jonas Hanke
  */
 public class TikzMainFormat {
-
-    private final boolean[] LEGEND = new boolean[7];
-    private boolean check = false;
 
     private final IFeatureModel featureModel;
     private final IFeatureTree featureTree;
@@ -31,80 +30,16 @@ public class TikzMainFormat {
         this.stringBuilder = stringBuilder;
     }
 
-    private void insertNodeHead(IFeature feature) {
-        if (feature.isAbstract()) {
-            stringBuilder.append(",abstract");
-            LEGEND[0] = true;
-            check = true;
-        }
-        if (feature.isConcrete()) {
-            stringBuilder.append(",concrete");
-            LEGEND[1] = true;
-            check = true;
-        }
-
-        if (!isRootFeature(feature) && feature.getFeatureTree().isPresent()) {
-            if (feature.getFeatureTree().get().isMandatory()) {
-                stringBuilder.append(",mandatory");
-                LEGEND[2] = true;
-                check = true;
-            } else {
-                stringBuilder.append(",optional");
-                LEGEND[3] = true;
-                check = true;
-            }
-        }
-
-        if (!isRootFeature(feature)) {
-            if (feature.getFeatureTree().get().getParentGroup().get().isOr()) {
-                stringBuilder.append(",or");
-                LEGEND[4] = true;
-                check = true;
-            }
-        }
-        if (!isRootFeature(feature)) {
-            if (feature.getFeatureTree().get().getParentGroup().get().isAlternative()) {
-                stringBuilder.append(",alternative");
-                LEGEND[5] = true;
-                check = true;
-            }
-        }
-    }
-
-    private boolean isRootFeature(IFeature feature) {
-        return featureModel.getRootFeatures().contains(feature);
-    }
-
-    /**
-     * A Feature is allowed to have a tree. This method checks the children and add them to the StringBuilder
-     * in LateX (.tex) style.
-     *
-     * @param featureTree (the part tree of the feature)
-     */
-    private void printTree(IFeatureTree featureTree) {
-        IFeature feature = featureTree.getFeature();
-        stringBuilder.append("[").append(feature.getName().get());
-        insertNodeHead(feature);
-        for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
-            printTree(featureTreeChildren);
-        }
-        stringBuilder.append("]");
-        // Trees.traverse(featureTree, new PrintVisitor());
-    }
-
     /**
      * Build the complete tree of the FeatureModel.
      */
     public void printForest() {
-        IFeature feature = featureTree.getFeature();
-
         stringBuilder.append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
-        stringBuilder.append("[").append(feature.getName().get());
-        insertNodeHead(feature);
-        for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
-            printTree(featureTreeChildren);
-        }
-        stringBuilder.append("]");
+
+        PrintVisitor printVisitor = new PrintVisitor();
+        Trees.traverse(featureTree, printVisitor);
+        stringBuilder.append(printVisitor.getResult().get());
+
         postProcessing();
         stringBuilder.append("\t").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
         if (!featureTree.getFeature().isHidden()) {
@@ -122,15 +57,28 @@ public class TikzMainFormat {
     }
 
     private void printLegend() {
-        if (!check) {
-            return;
+        MatrixHelper matrixHelper = new MatrixHelper(MatrixType.LEGEND);
+
+        if (stringBuilder.indexOf(",abstract") != -1 && stringBuilder.indexOf(",concrete") != -1) {
+            matrixHelper.writeNode("[abstract,label=right:Abstract Feature] {}");
+            matrixHelper.writeNode("[concrete,label=right:Concrete Feature] {}");
+        } else if (stringBuilder.indexOf(",abstract") != -1) {
+            matrixHelper.writeNode("[abstract,label=right:Feature] {}");
+        } else if (stringBuilder.indexOf(",concrete") != -1) {
+            matrixHelper.writeNode("[concrete,label=right:Feature] {}");
         }
 
-        MatrixHelper matrixHelper = getMatrixHelper();
+        if (stringBuilder.indexOf(",mandatory") != -1) {
+            matrixHelper.writeNode("[mandatory,label=right:Mandatory] {}");
+        }
 
-        if (LEGEND[4]) {
+        if (stringBuilder.indexOf(",optional") != -1) {
+            matrixHelper.writeNode("[optional,label=right:Optional] {}");
+        }
+
+        if (stringBuilder.indexOf(",or") != -1) {
             matrixHelper
-                    .writeFillDraw("filldraw[drawColor] (0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2]")
+                    .writeFillDraw("(0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2]")
                     .writeNode("[or,label=right:Or] {}")
                     .writeFillDraw("(0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0)")
                     .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
@@ -139,7 +87,7 @@ public class TikzMainFormat {
                     .writeNode("[or,label=right:Or Group] {}");
         }
 
-        if (LEGEND[5]) {
+        if (stringBuilder.indexOf(",and") != -1) {
             matrixHelper
                     .writeDraw("(0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2] -- cycle")
                     .writeNode("[alternative,label=right:Alternative] {}")
@@ -150,34 +98,6 @@ public class TikzMainFormat {
         }
 
         stringBuilder.append(matrixHelper.build());
-    }
-
-    private MatrixHelper getMatrixHelper() {
-        MatrixHelper matrixHelper = new MatrixHelper(MatrixType.LEGEND);
-        boolean abstractConcreteExists = false;
-
-        if (LEGEND[0] && LEGEND[1]) {
-            abstractConcreteExists = true;
-            matrixHelper.writeNode("[abstract,label=right:Abstract Feature] {}");
-            matrixHelper.writeNode("[concrete,label=right:Concrete Feature] {}");
-        }
-
-        if (LEGEND[0] && !abstractConcreteExists) {
-            matrixHelper.writeNode("[abstract,label=right:Feature] {}");
-        }
-
-        if (LEGEND[1] && !abstractConcreteExists) {
-            matrixHelper.writeNode("[concrete,label=right:Feature] {}");
-        }
-
-        if (LEGEND[2]) {
-            matrixHelper.writeNode("[mandatory,label=right:Mandatory] {}");
-        }
-
-        if (LEGEND[3]) {
-            matrixHelper.writeNode("[optional,label=right:Optional] {}");
-        }
-        return matrixHelper;
     }
 
     private void printConstraints() {

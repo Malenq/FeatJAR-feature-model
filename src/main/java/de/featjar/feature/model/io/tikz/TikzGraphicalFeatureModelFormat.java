@@ -23,24 +23,14 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
 
     public static String LINE_SEPERATOR  = System.lineSeparator();
 
-    private final StringBuilder stringBuilder;
-    private final IFeatureModel featureModel;
-    private final boolean hasVerticalLayout;
-    private final List<Problem> problemList;
-
-    // todo remove constructer
-    public TikzGraphicalFeatureModelFormat(IFeatureModel featureModel, boolean hasVerticalLayout) {
-        this.stringBuilder = new StringBuilder();
-        this.featureModel = featureModel;
-        this.problemList = new ArrayList<>();
-        this.hasVerticalLayout = hasVerticalLayout;
-    }
-
     @Override
-    public Result<String> serialize(IFeatureModel object) {
+    public Result<String> serialize(IFeatureModel featureModel) {
+        StringBuilder stringBuilder = new StringBuilder();
+        List<Problem> problemList = new ArrayList<>();
+
         stringBuilder.append("\\documentclass[border=5pt]{standalone}");
         stringBuilder.append(LINE_SEPERATOR);
-        TikzHeadFormat.header(stringBuilder, problemList, hasVerticalLayout);
+        TikzHeadFormat.header(stringBuilder, problemList, false);
         stringBuilder.append("\\begin{document}").append(LINE_SEPERATOR).append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
         for (IFeatureTree featureTree : featureModel.getRoots()) {
             new TikzMainFormat(featureModel, featureTree, stringBuilder).printForest();
@@ -50,8 +40,9 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
         return Result.of(stringBuilder.toString(), problemList);
     }
 
-    public IFeatureModel getFeatureModel() {
-        return featureModel;
+    @Override
+    public boolean supportsWrite() {
+        return true;
     }
 
     @Override
