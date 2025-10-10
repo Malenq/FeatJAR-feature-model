@@ -1,6 +1,8 @@
 package de.featjar.feature.model.io.tikz.helper;
 
 /**
+ * This class helps to build a matrix in latex. Choose a header from MatrixStyle and write your nodes, draw or whatever.
+ *
  * @author Felix Behme
  * @author Lara Merza
  * @author Jonas Hanke
