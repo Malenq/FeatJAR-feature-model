@@ -1,7 +1,6 @@
 package de.featjar.feature.model.io.tikz;
 
 import de.featjar.base.FeatJAR;
-import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.*;
 import de.featjar.formula.structure.Expressions;
@@ -10,6 +9,11 @@ import de.featjar.formula.structure.term.value.Variable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author Felix Behme
@@ -55,39 +59,80 @@ public class FeatureModelDisplayTikzTest {
 
     @Test
     public void perform() {
-        new TikzGraphicalFeatureModelFormat(featureModel, false).serialize(featureModel).ifPresent(s -> {
-            FeatJAR.log().info(s);
+        StringBuilder expectedOutput = loadTestFile();
+
+        if (expectedOutput == null) {
+            throw new IllegalStateException("File is null");
+        }
+
+        String value = expectedOutput.toString();
+
+        FeatJAR.log().info("Expected Output: " + value);
+
+        new TikzGraphicalFeatureModelFormat().serialize(featureModel).ifPresent(output -> {
+            FeatJAR.log().info("Expected Output: " + value);
+            FeatJAR.log().info("Acutally Output: " + output);
+
+            Assertions.assertEquals(value, output);
         });
+    }
+
+    // Todo: Add @Test here and remove the other @Test on the method perform
+    //@Test
+    public void createTestFile() {
+        new TikzGraphicalFeatureModelFormat().serialize(featureModel).ifPresent(this::writeToFile);
     }
 
     /**
-     * Test for the "synatx" mechanic
+     * This method can be used to write the output in a file with ignoring tabs or spaces.
+     * (It will be written correctly)
+     *
+     * @param "output" from the "new" file
      */
+    private void writeToFile(String value) {
+        Path filePath = Paths.get("src", "main", "resources", "test", "test-output.tex");
 
-    public void displayTikz() {
-        featureModel.getFeatureModel().getRoots().forEach(iFeatureTree -> {
-            stringBuilder.append("[").append(iFeatureTree.getFeature().getName().get());
-            for (IFeatureTree featureTreeChildren : iFeatureTree.getChildren()) {
-                subTreeRecursiv(featureTreeChildren);
+        try {
+            Files.createDirectories(filePath.getParent());
+
+            try (BufferedWriter writer = Files.newBufferedWriter(filePath)) {
+                writer.write(value);
             }
-        });
-
-        stringBuilder.append("]");
-        FeatJAR.log().info(stringBuilder);
-
-        String expectedOutput = "[Hello[Feature[Wonderful][Beautiful]][World]]";
-
-        Assertions.assertEquals(expectedOutput,
-                stringBuilder.toString(), "Expected: " + expectedOutput + System.lineSeparator()
-                        + "Output: " + stringBuilder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void subTreeRecursiv(IFeatureTree featureTree) {
-        stringBuilder.append("[").append(featureTree.getFeature().getName().get());
-        for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
-            subTreeRecursiv(featureTreeChildren);
+    /**
+     * This method the test-output.tex from the resource (resource/test) file.
+     *
+     * @return Output of the file as a StringBuilder
+     */
+    private StringBuilder loadTestFile() {
+        StringBuilder stringBuilderFile = new StringBuilder();
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("test/test-output.tex");
+
+        if (inputStream == null) {
+            return null;
         }
-        stringBuilder.append("]");
+
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilderFile.append(line).append(System.lineSeparator());
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Remove last add (its empty)
+        int lastIndex = stringBuilderFile.lastIndexOf("\n");
+        if (lastIndex >= 0) {
+            stringBuilderFile.delete(lastIndex, stringBuilderFile.length());
+        }
+
+        return stringBuilderFile;
     }
 
 }
