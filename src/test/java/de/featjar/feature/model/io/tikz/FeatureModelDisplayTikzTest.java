@@ -4,7 +4,9 @@ import de.featjar.base.FeatJAR;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.*;
+import de.featjar.formula.structure.Expressions;
 import de.featjar.formula.structure.connective.*;
+import de.featjar.formula.structure.term.value.Variable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,11 +32,11 @@ public class FeatureModelDisplayTikzTest {
         // First Tree
         IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureRootS);
-        rootTree.mutate().toAndGroup();
+        rootTree.mutate().toOrGroup();
 
         IFeature feature = featureModel.mutate().addFeature("Feature");
         IFeatureTree firstFeatureTree = rootTree.mutate().addFeatureBelow(feature);
-        firstFeatureTree.mutate().toOrGroup();
+        firstFeatureTree.mutate().makeMandatory();
 
         IFeature world = featureModel.mutate().addFeature("World");
         rootTree.mutate().addFeatureBelow(world);
@@ -44,31 +46,16 @@ public class FeatureModelDisplayTikzTest {
 
         IFeature beautiful = featureModel.addFeature("Beautiful");
         firstFeatureTree.mutate().addFeatureBelow(beautiful);
+        featureModel.addConstraint(new And(Expressions.literal("A"), Expressions.literal("B")));
+        featureModel.addConstraint(new Implies(Expressions.literal("C"), new ForAll(new Variable("A"), new BiImplies(Expressions.literal("A"), Expressions.literal("C")))));
 
-        // Second Tree
-
-        IFeatureTree rootTree3 = featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
-        rootTree3.mutate().toAndGroup();
-
-        IFeature childFeature1 = featureModel.mutate().addFeature("A");
-        childFeature1.mutate().setAbstract();
-        IFeatureTree childFeature1Tree = rootTree3.mutate().addFeatureBelow(childFeature1);
-        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
-
-        childFeature1Tree.mutate().toAlternativeGroup();
-
-        IFeature childFeature2 = featureModel.mutate().addFeature("B");
-        childFeature1Tree.mutate().addFeatureBelow(childFeature2);
-
-        IFeature childFeature3 = featureModel.mutate().addFeature("C");
-        childFeature1Tree.mutate().addFeatureBelow(childFeature3);
 
         FeatureModelDisplayTikzTest.featureModel = featureModel;
     }
 
     @Test
     public void perform() {
-        new TikzGraphicalFeatureModelFormat(featureModel, false).serialize().ifPresent(s -> {
+        new TikzGraphicalFeatureModelFormat(featureModel, false).serialize(featureModel).ifPresent(s -> {
             FeatJAR.log().info(s);
         });
     }

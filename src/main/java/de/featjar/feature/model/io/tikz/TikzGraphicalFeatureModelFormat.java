@@ -23,13 +23,12 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
 
     public static String LINE_SEPERATOR  = System.lineSeparator();
 
-    private final boolean[] legend = new boolean[7];
-
     private final StringBuilder stringBuilder;
     private final IFeatureModel featureModel;
     private final boolean hasVerticalLayout;
     private final List<Problem> problemList;
 
+    // todo remove constructer
     public TikzGraphicalFeatureModelFormat(IFeatureModel featureModel, boolean hasVerticalLayout) {
         this.stringBuilder = new StringBuilder();
         this.featureModel = featureModel;
@@ -37,13 +36,14 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
         this.hasVerticalLayout = hasVerticalLayout;
     }
 
-    public Result<String> serialize() {
+    @Override
+    public Result<String> serialize(IFeatureModel object) {
         stringBuilder.append("\\documentclass[border=5pt]{standalone}");
         stringBuilder.append(LINE_SEPERATOR);
         TikzHeadFormat.header(stringBuilder, problemList, hasVerticalLayout);
         stringBuilder.append("\\begin{document}").append(LINE_SEPERATOR).append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
         for (IFeatureTree featureTree : featureModel.getRoots()) {
-            new TikzMainFormat(featureModel, featureTree, stringBuilder).write();
+            new TikzMainFormat(featureModel, featureTree, stringBuilder).printForest();
         }
         stringBuilder.append(LINE_SEPERATOR);
         stringBuilder.append("\t%---------------------------------------------------------------------------").append(LINE_SEPERATOR).append("\\end{document}");

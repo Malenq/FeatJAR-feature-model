@@ -10,14 +10,13 @@ import de.featjar.feature.model.io.tikz.helper.MatrixHelper;
 import de.featjar.feature.model.io.tikz.helper.MatrixType;
 import de.featjar.formula.io.textual.ExpressionSerializer;
 import de.featjar.formula.io.textual.LaTexSymbols;
-import de.featjar.formula.structure.IFormula;
 
 /**
  * @author Felix Behme
  * @author Lara Merza
  * @author Jonas Hanke
  */
-public class TikzMainFormat implements IGraphicalFormat{
+public class TikzMainFormat {
 
     private final boolean[] LEGEND = new boolean[7];
     private boolean check = false;
@@ -32,11 +31,6 @@ public class TikzMainFormat implements IGraphicalFormat{
         this.stringBuilder = stringBuilder;
     }
 
-    @Override
-    public void write() {
-        printForest();
-    }
-
     private void insertNodeHead(IFeature feature) {
         if (feature.isAbstract()) {
             stringBuilder.append(",abstract");
@@ -49,8 +43,7 @@ public class TikzMainFormat implements IGraphicalFormat{
             check = true;
         }
 
-        if (!isRootFeature(feature) && feature.getFeatureTree().isPresent()
-                && feature.getFeatureTree().get().getParentGroup().isEmpty()) {
+        if (!isRootFeature(feature) && feature.getFeatureTree().isPresent()) {
             if (feature.getFeatureTree().get().isMandatory()) {
                 stringBuilder.append(",mandatory");
                 LEGEND[2] = true;
@@ -90,19 +83,19 @@ public class TikzMainFormat implements IGraphicalFormat{
      */
     private void printTree(IFeatureTree featureTree) {
         IFeature feature = featureTree.getFeature();
-        //insertNodeHead(feature.getName().get());
         stringBuilder.append("[").append(feature.getName().get());
         insertNodeHead(feature);
         for (IFeatureTree featureTreeChildren : featureTree.getChildren()) {
             printTree(featureTreeChildren);
         }
         stringBuilder.append("]");
+        // Trees.traverse(featureTree, new PrintVisitor());
     }
 
     /**
      * Build the complete tree of the FeatureModel.
      */
-    private void printForest() {
+    public void printForest() {
         IFeature feature = featureTree.getFeature();
 
         stringBuilder.append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
@@ -117,7 +110,7 @@ public class TikzMainFormat implements IGraphicalFormat{
         if (!featureTree.getFeature().isHidden()) {
             printLegend();
         }
-        //printConstraints(str, object);
+        printConstraints();
         stringBuilder.append("\\end{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
     }
 
