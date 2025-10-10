@@ -1,11 +1,16 @@
 package de.featjar.feature.model.io.tikz.format;
 
+import de.featjar.base.tree.Trees;
+import de.featjar.feature.model.IConstraint;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
 import de.featjar.feature.model.io.tikz.helper.MatrixHelper;
 import de.featjar.feature.model.io.tikz.helper.MatrixType;
+import de.featjar.formula.io.textual.ExpressionSerializer;
+import de.featjar.formula.io.textual.LaTexSymbols;
+import de.featjar.formula.structure.IFormula;
 
 /**
  * @author Felix Behme
@@ -182,24 +187,20 @@ public class TikzMainFormat implements IGraphicalFormat{
         return matrixHelper;
     }
 
+    private void printConstraints() {
+        ExpressionSerializer expressionSerializer = new ExpressionSerializer();
+        expressionSerializer.setEnquoteAlways(true);
+        expressionSerializer.setSymbols(LaTexSymbols.INSTANCE);
 
-    /*private void printConstraints() {
         stringBuilder.append("	\\matrix [below=1mm of current bounding box] {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
         for (IConstraint constraint : featureModel.getConstraints()) {
-            String text = constraint.getFormula().print();
+            String text = constraint.getFormula().traverse(expressionSerializer).get();
             text = text.replaceAll("\"([\\w\" ]+)\"", " \\\\text\\{$1\\} "); // wrap all words in \text{} // replace with $2
             text = text.replaceAll("\\s+", " "); // remove unnecessary whitespace characters
             stringBuilder.append("	\\node {\\(").append(text).append("\\)}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+
+            expressionSerializer.reset();
         }
         stringBuilder.append("	};").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
-        /*for (final IGraphicalConstraint constraint : graphicalFeatureModel.getConstraints()) {
-            String text = constraint.getObject().getNode().toString(NodeWriter.latexSymbols, true);
-            text = text.replaceAll("\"([\\w\" ]+)\"", " \\\\text\\{$1\\} "); // wrap all words in \text{} // replace with $2
-            text = text.replaceAll("\\s+", " "); // remove unnecessary whitespace characters
-            str.append("	\\node {\\(" + text + "\\)}; \\\\" + lnSep);
-        }
-        str.append("	};" + lnSep);
     }
-     */
-
 }
