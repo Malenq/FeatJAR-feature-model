@@ -26,11 +26,11 @@ import de.featjar.base.computation.Dependency;
 import de.featjar.base.computation.IComputation;
 import de.featjar.base.computation.Progress;
 import de.featjar.base.data.Attribute;
-import de.featjar.base.data.IAttribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.Trees;
 import de.featjar.feature.model.FeatureTree.Group;
+import de.featjar.feature.model.IConstraint;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.IFormula;
@@ -45,10 +45,10 @@ import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.*;
 
 /**
  * Transforms a feature model into a boolean formula.
@@ -74,46 +74,52 @@ public class ComputeFormula extends AComputation<IFormula> {
         IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
         ArrayList<IFormula> constraints = new ArrayList<>();
         HashSet<Variable> variables = new HashSet<>();
-//<<<<<<< HEAD
+        // <<<<<<< HEAD
 
         IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
 
         if (SIMPLE_TRANSLATION.get(dependencyList)) {
+
+            Collection<IConstraint> crossTreeConstr = featureModel.getConstraints();
+            for (IConstraint constr : crossTreeConstr) {
+                constraints.add(constr.getFormula());
+            }
+
             Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));
         } else {
             traverseFeatureModel(featureModel, constraints, variables);
         }
-//=======
-//        Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
-//
-//        featureModel.getFeatureTreeStream().forEach(node -> {
-//            // TODO use better error value
-//            IFeature feature = node.getFeature();
-//            String featureName = feature.getName().orElse("");
-//            Variable variable = new Variable(featureName, feature.getType());
-//            variables.add(variable);
-//
-//            if(node.getAttributes().isPresent()) {
-//                attributes.put(variable, node.getAttributes().get());
-//            }
-//
-//            // TODO take featureRanges into Account
-//            Result<IFeatureTree> potentialParentTree = node.getParent();
-//            Literal featureLiteral = Expressions.literal(featureName);
-//            if (potentialParentTree.isEmpty()) {
-//                handleRoot(constraints, featureLiteral, node);
-//            } else {
-//                handleParent(constraints, featureLiteral, node);
-//            }
-//            handleGroups(constraints, featureLiteral, node);
-//        });
-//
-//        ReplaceAttributeAggregate replaceAttributeAggregate = new ReplaceAttributeAggregate(attributes);
-//        featureModel.getConstraints().forEach(constraint -> {
-//            Trees.traverse(constraint.getFormula(), replaceAttributeAggregate);
-//            constraints.add(constraint.getFormula());
-//        });
-//>>>>>>> main_malenq
+        // =======
+        //        Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
+        //
+        //        featureModel.getFeatureTreeStream().forEach(node -> {
+        //            // TODO use better error value
+        //            IFeature feature = node.getFeature();
+        //            String featureName = feature.getName().orElse("");
+        //            Variable variable = new Variable(featureName, feature.getType());
+        //            variables.add(variable);
+        //
+        //            if(node.getAttributes().isPresent()) {
+        //                attributes.put(variable, node.getAttributes().get());
+        //            }
+        //
+        //            // TODO take featureRanges into Account
+        //            Result<IFeatureTree> potentialParentTree = node.getParent();
+        //            Literal featureLiteral = Expressions.literal(featureName);
+        //            if (potentialParentTree.isEmpty()) {
+        //                handleRoot(constraints, featureLiteral, node);
+        //            } else {
+        //                handleParent(constraints, featureLiteral, node);
+        //            }
+        //            handleGroups(constraints, featureLiteral, node);
+        //        });
+        //
+        //        ReplaceAttributeAggregate replaceAttributeAggregate = new ReplaceAttributeAggregate(attributes);
+        //        featureModel.getConstraints().forEach(constraint -> {
+        //            Trees.traverse(constraint.getFormula(), replaceAttributeAggregate);
+        //            constraints.add(constraint.getFormula());
+        //        });
+        // >>>>>>> main_malenq
 
         Reference reference = new Reference(new And(constraints));
         reference.setFreeVariables(variables);

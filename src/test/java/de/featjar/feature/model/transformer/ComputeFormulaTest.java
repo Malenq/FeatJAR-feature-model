@@ -142,6 +142,49 @@ class ComputeFormulaTest {
     }
 
     @Test
+    void simpleCrosstreeConstraint() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and set cardinality for the child feature
+        IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        childFeature1Tree.mutate().toAlternativeGroup();
+
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature3);
+
+        // cross-tree constraints
+        featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("C")));
+        featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("B")));
+
+        expected = new Reference(new And(
+                new Implies(new Literal("B"), new Literal("C")),
+                new Literal("root"),
+                new Implies(new Literal("A_1"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("A_1")),
+                new Implies(new Or(Arrays.asList(new Literal("A_1"), new Literal("A_2"))), new Literal("B")),
+                new Implies(new Literal("root"), new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
+                new Implies(new Literal("B"), new Literal("root")),
+                new Implies(new Literal("C"), new Literal("root"))
+
+                // constraints for non-cardinality features can be just added for simple
+                // translation
+
+                ));
+
+        executeSimpleTest();
+    }
+
+    @Test
     void withCardinalityAndChildInbetween() {
         IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));

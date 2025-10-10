@@ -101,7 +101,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         int lowerBound = node.getFeatureCardinalityLowerBound();
         int upperBound = node.getFeatureCardinalityUpperBound();
 
-        ArrayList<IFormula> featureList = new ArrayList<IFormula>();
+        ArrayList<IFormula> originalFeatureConstraints = getConstraints(node);
+        constraints.removeAll(originalFeatureConstraints);
+
+        ArrayList<IFormula> featureConstraintList = new ArrayList<IFormula>();
 
         // add literals and implication to parent
         String literalName = "";
@@ -114,16 +117,38 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
             if (i > 1) {
                 // add to implication chain
-                IFormula previousLiteral = featureList.get(featureList.size() - 1);
+                IFormula previousLiteral = featureConstraintList.get(featureConstraintList.size() - 1);
                 constraints.add(new Implies(featureLiteral, previousLiteral));
             }
 
-            featureList.add(featureLiteral);
+            featureConstraintList.add(featureLiteral);
+        }
+
+        // replace original feature with or of newly created cardinality feature pseudo literals
+        IFormula replacement = new Or(featureConstraintList);
+        for (IFormula constr : originalFeatureConstraints) {
+            constr.replaceChild(new Literal(node.getFeature().getName().get()), replacement);
+            constraints.add(constr);
         }
 
         // add cardinality constraint
         // check if 0 and do not add implication
-        if (lowerBound != 0) constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, featureList)));
+        if (lowerBound != 0)
+            constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, featureConstraintList)));
+    }
+
+    private ArrayList<IFormula> getConstraints(IFeatureTree node) {
+
+        ArrayList<IFormula> matchingConstraints = new ArrayList<IFormula>();
+        for (IFormula constraint : constraints) {
+
+            Literal nodeLiteral = new Literal(node.getFeature().getName().get());
+
+            if (constraint.hasChild(nodeLiteral) || constraint.equals(nodeLiteral)) {
+                matchingConstraints.add(constraint);
+            }
+        }
+        return matchingConstraints;
     }
 
     private Literal getNextNonCardinalityParent(IFeatureTree node) {
