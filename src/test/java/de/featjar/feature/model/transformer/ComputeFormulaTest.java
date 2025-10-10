@@ -71,8 +71,8 @@ class ComputeFormulaTest {
                 new Implies(new Literal("A_1"), new Literal("root")),
                 new Implies(new Literal("A_2"), new Literal("root")),
                 new Implies(new Literal("A_2"), new Literal("A_1")),
-                new Implies(new Literal("B_1"), new Literal("root")),
-                new Implies(new Literal("B_2"), new Literal("root")),
+                new Implies(new Literal("B_1"), new Or(new Literal("A_1"), new Literal("A_2"))),
+                new Implies(new Literal("B_2"), new Or(new Literal("A_1"), new Literal("A_2"))),
                 new Implies(new Literal("B_2"), new Literal("B_1"))));
 
         executeSimpleTest();
@@ -134,9 +134,11 @@ class ComputeFormulaTest {
                 new Implies(new Literal("A_1"), new Literal("root")),
                 new Implies(new Literal("A_2"), new Literal("root")),
                 new Implies(new Literal("A_2"), new Literal("A_1")),
-                new Implies(new Literal("root"), new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
-                new Implies(new Literal("B"), new Literal("root")),
-                new Implies(new Literal("C"), new Literal("root"))));
+                new Implies(
+                        new Or(new Literal("A_1"), new Literal("A_2")),
+                        new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
+                new Implies(new Literal("B"), new Or(new Literal("A_1"), new Literal("A_2"))),
+                new Implies(new Literal("C"), new Or(new Literal("A_1"), new Literal("A_2")))));
 
         executeSimpleTest();
     }
@@ -172,9 +174,11 @@ class ComputeFormulaTest {
                 new Implies(new Literal("A_2"), new Literal("root")),
                 new Implies(new Literal("A_2"), new Literal("A_1")),
                 new Implies(new Or(Arrays.asList(new Literal("A_1"), new Literal("A_2"))), new Literal("B")),
-                new Implies(new Literal("root"), new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
-                new Implies(new Literal("B"), new Literal("root")),
-                new Implies(new Literal("C"), new Literal("root"))
+                new Implies(
+                        new Or(new Literal("A_1"), new Literal("A_2")),
+                        new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
+                new Implies(new Literal("B"), new Or(new Literal("A_1"), new Literal("A_2"))),
+                new Implies(new Literal("C"), new Or(new Literal("A_1"), new Literal("A_2")))
 
                 // constraints for non-cardinality features can be just added for simple
                 // translation
