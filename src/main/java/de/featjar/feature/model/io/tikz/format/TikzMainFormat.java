@@ -78,8 +78,6 @@ public class TikzMainFormat {
 
         if (stringBuilder.indexOf(",or") != -1) {
             matrixHelper
-                    .writeFillDraw("(0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2]")
-                    .writeNode("[or,label=right:Or] {}")
                     .writeFillDraw("(0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0)")
                     .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
                     .writeDraw("(0.1,0) -- +(0.2,-0.4)")
@@ -87,10 +85,8 @@ public class TikzMainFormat {
                     .writeNode("[or,label=right:Or Group] {}");
         }
 
-        if (stringBuilder.indexOf(",and") != -1) {
+        if (stringBuilder.indexOf(",alternative") != -1) {
             matrixHelper
-                    .writeDraw("(0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2] -- cycle")
-                    .writeNode("[alternative,label=right:Alternative] {}")
                     .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
                     .writeDraw("(0.1,0) -- +(0.2,-0.4)")
                     .writeDraw("(0,-0.2) arc (240:300:0.2)")

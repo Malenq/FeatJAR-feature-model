@@ -128,7 +128,7 @@
 	%---The Feature Diagram-----------------------------------------------------
 \begin{forest}
 	featureDiagram
-	[Hello,abstract[Feature,concrete,mandatory,or[Wonderful,concrete,optional][Beautiful,concrete,optional]][World,concrete,optional,or]]	
+	[Hello,abstract[Feature,concrete,mandatory,or[Wonderful,concrete,optional,alternative][Beautiful,concrete,optional,alternative]][World,concrete,optional,or]]	
 	\matrix [anchor=north west] at (current bounding box.north east) {
 		\node [placeholder] {}; \\
 	};
@@ -138,13 +138,15 @@
 		\node [concrete,label=right:Concrete Feature] {}; \\
 		\node [mandatory,label=right:Mandatory] {}; \\
 		\node [optional,label=right:Optional] {}; \\
- \filldraw[drawColor] (0.45,0.15) ++ (225:0.3) arc[start angle=315,end angle=225,radius=0.2]; 
-		\node [or,label=right:Or] {}; \\
  \filldraw[drawColor] (0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0); 
 			\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);
 			\draw[drawColor] (0.1,0) -- +(0.2,-0.4);
 			\fill[drawColor] (0,-0.2) arc (240:300:0.2);
 		\node [or,label=right:Or Group] {}; \\
+			\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);
+			\draw[drawColor] (0.1,0) -- +(0.2,-0.4);
+			\draw[drawColor] (0,-0.2) arc (240:300:0.2);
+		\node [alternative,label=right:Alternative Group] {}; \\
 	};
 	\matrix [below=1mm of current bounding box] {
 	\node {\( \text{A} \land \text{B} \)}; \\

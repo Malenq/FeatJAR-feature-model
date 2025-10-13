@@ -41,6 +41,7 @@ public class FeatureModelDisplayTikzTest {
         IFeature feature = featureModel.mutate().addFeature("Feature");
         IFeatureTree firstFeatureTree = rootTree.mutate().addFeatureBelow(feature);
         firstFeatureTree.mutate().makeMandatory();
+        firstFeatureTree.mutate().toAlternativeGroup();
 
         IFeature world = featureModel.mutate().addFeature("World");
         rootTree.mutate().addFeatureBelow(world);
@@ -66,8 +67,6 @@ public class FeatureModelDisplayTikzTest {
         }
 
         String value = expectedOutput.toString();
-
-        FeatJAR.log().info("Expected Output: " + value);
 
         new TikzGraphicalFeatureModelFormat().serialize(featureModel).ifPresent(output -> {
             FeatJAR.log().info("Expected Output: " + value);

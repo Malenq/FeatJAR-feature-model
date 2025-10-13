@@ -53,7 +53,7 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
             stringBuilder.append(",concrete");
         }
 
-        if (!isRootFeature(feature) && feature.getFeatureTree().isPresent()) {
+        if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
             if (feature.getFeatureTree().get().isMandatory()) {
                 stringBuilder.append(",mandatory");
             } else {
@@ -61,20 +61,21 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
             }
         }
 
-        if (!isRootFeature(feature)) {
-            if (feature.getFeatureTree().get().getParentGroup().get().isOr()) {
+        if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
+            if (feature.getFeatureTree().get().getParentGroup().isPresent() &&
+                    feature.getFeatureTree().get().getParentGroup().get().isOr()) {
                 stringBuilder.append(",or");
             }
         }
-        if (!isRootFeature(feature)) {
-            if (feature.getFeatureTree().get().getParentGroup().get().isAlternative()) {
+        if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
+            if (feature.getFeatureTree().get().getParentGroup().isPresent() &&
+                    feature.getFeatureTree().get().getParentGroup().get().isAlternative()) {
                 stringBuilder.append(",alternative");
             }
         }
     }
 
-    private boolean isRootFeature(IFeature feature) {
-        return feature.getFeatureModel().getRootFeatures().contains(feature);
+    private boolean isNotRootFeature(IFeature feature) {
+        return !feature.getFeatureModel().getRootFeatures().contains(feature);
     }
-
 }
