@@ -70,22 +70,6 @@ public class AttributeHelper {
         }
     }
 
-    private String modifyFormat(String first, String second) {
-        String format = "";
-        if (first.length() <= frontLength) {
-            int diff = frontLength = first.length();
-            String space = " ".repeat(diff);
-            format = space + first;
-        }
-        format = format + " = ";
-        if (second.length() <= backLength) {
-            int diff = backLength = second.length();
-            String space = " ".repeat(diff);
-            format = format + space + second;
-        }
-
-        return format;
-    }
     private boolean isEnd() {
         return runs == size;
     }
