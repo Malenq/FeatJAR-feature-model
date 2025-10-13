@@ -8,7 +8,6 @@ import de.featjar.formula.structure.IExpression;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.term.aggregate.IAttributeAggregate;
 import de.featjar.formula.structure.term.value.Variable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,19 +24,27 @@ import java.util.Optional;
 public class ReplaceAttributeAggregate implements ITreeVisitor<IFormula, Void> {
 
     private final Map<Variable, Map<IAttribute<?>, Object>> attributes;
+    private boolean hasCardinalityFeatures;
 
-    public ReplaceAttributeAggregate(Map<Variable, Map<IAttribute<?>, Object>> attributes) {
+    public ReplaceAttributeAggregate(
+            Map<Variable, Map<IAttribute<?>, Object>> attributes, Boolean hasCardinalityFeatures) {
         this.attributes = attributes;
+        this.hasCardinalityFeatures = hasCardinalityFeatures;
     }
 
     @Override
     public TraversalAction lastVisit(List<IFormula> path) {
         final IExpression formula = ITreeVisitor.getCurrentNode(path);
 
-        if(formula instanceof IAttributeAggregate) {
+        if (formula instanceof IAttributeAggregate) {
+
+            if (hasCardinalityFeatures) {
+                throw new RuntimeException("Attribute aggregates and cardinality features can not be translated.");
+            }
+
             final Result<IFormula> parent = ITreeVisitor.getParentNode(path);
 
-            if(parent.isPresent()) {
+            if (parent.isPresent()) {
                 ArrayList<Variable> filteredVariables = new ArrayList<>();
                 ArrayList<Object> values = new ArrayList<>();
                 String attributeFilter = ((IAttributeAggregate) formula).getAttributeFilter();
@@ -54,7 +61,7 @@ public class ReplaceAttributeAggregate implements ITreeVisitor<IFormula, Void> {
                 });
 
                 Result<IExpression> result = ((IAttributeAggregate) formula).translate(filteredVariables, values);
-                if(result.isPresent()) {
+                if (result.isPresent()) {
                     parent.get().replaceChild(formula, result.get());
                 }
             }

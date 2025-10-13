@@ -44,10 +44,6 @@ import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.*;
 
 /**
@@ -60,6 +56,7 @@ public class ComputeFormula extends AComputation<IFormula> {
     protected static final Dependency<Boolean> SIMPLE_TRANSLATION = Dependency.newDependency(Boolean.class);
 
     static Attribute<String> literalNameAttribute = new Attribute<>("literalName", String.class);
+    private Boolean hasCardinalityFeatures = Boolean.FALSE;
 
     public ComputeFormula(IComputation<IFeatureModel> formula) {
         super(formula, Computations.of(Boolean.FALSE));
@@ -74,46 +71,27 @@ public class ComputeFormula extends AComputation<IFormula> {
         IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
         ArrayList<IFormula> constraints = new ArrayList<>();
         HashSet<Variable> variables = new HashSet<>();
-//<<<<<<< HEAD
-
-        IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
+        Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
 
         if (SIMPLE_TRANSLATION.get(dependencyList)) {
-            Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));
+            IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
+
+            ComputeSimpleFormulaVisitor simpleVisitor =
+                    new ComputeSimpleFormulaVisitor(constraints, variables, attributes);
+            Trees.traverse(iFeatureTree, simpleVisitor);
+
+            hasCardinalityFeatures = simpleVisitor.getHasCardinalityFeature();
         } else {
-            traverseFeatureModel(featureModel, constraints, variables);
+            traverseFeatureModel(featureModel, constraints, variables, attributes);
         }
-//=======
-//        Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
-//
-//        featureModel.getFeatureTreeStream().forEach(node -> {
-//            // TODO use better error value
-//            IFeature feature = node.getFeature();
-//            String featureName = feature.getName().orElse("");
-//            Variable variable = new Variable(featureName, feature.getType());
-//            variables.add(variable);
-//
-//            if(node.getAttributes().isPresent()) {
-//                attributes.put(variable, node.getAttributes().get());
-//            }
-//
-//            // TODO take featureRanges into Account
-//            Result<IFeatureTree> potentialParentTree = node.getParent();
-//            Literal featureLiteral = Expressions.literal(featureName);
-//            if (potentialParentTree.isEmpty()) {
-//                handleRoot(constraints, featureLiteral, node);
-//            } else {
-//                handleParent(constraints, featureLiteral, node);
-//            }
-//            handleGroups(constraints, featureLiteral, node);
-//        });
-//
-//        ReplaceAttributeAggregate replaceAttributeAggregate = new ReplaceAttributeAggregate(attributes);
-//        featureModel.getConstraints().forEach(constraint -> {
-//            Trees.traverse(constraint.getFormula(), replaceAttributeAggregate);
-//            constraints.add(constraint.getFormula());
-//        });
-//>>>>>>> main_malenq
+
+        ReplaceAttributeAggregate replaceAttributeAggregate =
+                new ReplaceAttributeAggregate(attributes, hasCardinalityFeatures);
+        featureModel.getConstraints().forEach(constraint -> {
+            Trees.traverse(constraint.getFormula(), replaceAttributeAggregate);
+
+            constraints.add(constraint.getFormula());
+        });
 
         Reference reference = new Reference(new And(constraints));
         reference.setFreeVariables(variables);
@@ -121,9 +99,20 @@ public class ComputeFormula extends AComputation<IFormula> {
     }
 
     private void traverseFeatureModel(
-            IFeatureModel featureModel, ArrayList<IFormula> constraints, HashSet<Variable> variables) {
+            IFeatureModel featureModel,
+            ArrayList<IFormula> constraints,
+            HashSet<Variable> variables,
+            Map<Variable, Map<IAttribute<?>, Object>> attributes) {
 
         for (IFeatureTree root : featureModel.getRoots()) {
+
+            // collect the attributes of root
+            Variable variable = new Variable(
+                    root.getFeature().getName().get(), root.getFeature().getType());
+            variables.add(variable);
+            if (root.getAttributes().isPresent()) {
+                attributes.put(variable, root.getAttributes().get());
+            }
 
             Literal rootLiteral = new Literal(root.getFeature().getName().orElse(""));
             if (root.isMandatory()) {
@@ -131,17 +120,31 @@ public class ComputeFormula extends AComputation<IFormula> {
             }
             handleGroups(rootLiteral, root, constraints);
 
-            addChildConstraints(root, constraints);
+            addChildConstraints(root, constraints, variables, attributes);
         }
     }
 
-    private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints) {
+    private void addChildConstraints(
+            IFeatureTree node,
+            ArrayList<IFormula> constraints,
+            HashSet<Variable> variables,
+            Map<Variable, Map<IAttribute<?>, Object>> attributes) {
+
+        // collect the attributes of all features
+        // TODO: check if the variables need to be duplicated?
+        Variable variable = new Variable(
+                node.getFeature().getName().get(), node.getFeature().getType());
+        variables.add(variable);
+        if (node.getAttributes().isPresent()) {
+            attributes.put(variable, node.getAttributes().get());
+        }
 
         Literal parentLiteral = new Literal(getLiteralName(node));
 
         for (IFeatureTree child : node.getChildren()) {
 
             if (isCardinalityFeature(child)) {
+                hasCardinalityFeatures = Boolean.TRUE;
 
                 int upperBound = child.getFeatureCardinalityUpperBound();
                 int lowerBound = child.getFeatureCardinalityLowerBound();
@@ -174,7 +177,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 
                     constraintGroupLiterals.add(currentLiteral);
 
-                    addChildConstraints(cardinalityClone, constraints);
+                    addChildConstraints(cardinalityClone, constraints, variables, attributes);
                 }
                 // check if 0 and do not add implication
                 if (lowerBound != 0)
@@ -198,7 +201,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                 // handle group
                 handleGroups(childFeatureLiteral, child, constraints);
 
-                addChildConstraints(child, constraints);
+                addChildConstraints(child, constraints, variables, attributes);
             }
         }
     }

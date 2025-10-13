@@ -23,6 +23,7 @@ package de.featjar.feature.model.transformer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.featjar.base.computation.ComputeConstant;
+import de.featjar.base.data.Attribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.FeatureModel;
@@ -36,7 +37,10 @@ import de.featjar.formula.structure.connective.Choose;
 import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
+import de.featjar.formula.structure.predicate.LessThan;
 import de.featjar.formula.structure.predicate.Literal;
+import de.featjar.formula.structure.term.aggregate.AttributeSum;
+import de.featjar.formula.structure.term.value.Constant;
 import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -339,6 +343,57 @@ class ComputeFormulaTest {
         expected = new Reference(new And(new Literal("root"), new Implies(new Literal("Test1"), new Literal("root"))));
 
         executeTest();
+    }
+
+    static Attribute<Boolean> cpuAttribute = new Attribute<>("cpu", Boolean.class);
+    static Attribute<Boolean> gpuAttribute = new Attribute<>("cpu", Boolean.class);
+
+    @Test
+    void oneFeatureAndAttributeAggregate() {
+
+        // root
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and add our only child
+        IFeature childFeature = featureModel.mutate().addFeature("Test1");
+        IFeatureTree childFeatureTree = rootTree.mutate().addFeatureBelow(childFeature);
+
+        // TODO: add attributes to aggregate and and corresponding cross-tree-constraint
+        // add attribute to aggregate
+        childFeatureTree.mutate().setAttributeValue(cpuAttribute, Boolean.TRUE);
+        childFeatureTree.mutate().setAttributeValue(gpuAttribute, Boolean.TRUE);
+        // cross-tree constraint for aggregate testing
+        IFormula aggregateConstraint = new And(
+                new Implies(
+                        new Literal("cables"), new LessThan(new AttributeSum("cost"), new Constant(200L, Long.class))),
+                new Literal("case"));
+        featureModel.mutate().addConstraint(aggregateConstraint);
+
+        // TODO: add expected to match the constructed model
+        //        expected = new Reference(new And(new Literal("root"), new Implies(new Literal("Test1"), new
+        // Literal("root"))));
+
+        executeTest();
+    }
+
+    @Test
+    void cardinalityAndAttributeAggregate() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and add our only child
+        IFeature childFeature = featureModel.mutate().addFeature("Test1");
+        IFeatureTree childFeatureTree = rootTree.mutate().addFeatureBelow(childFeature);
+        childFeatureTree.mutate().setFeatureCardinality(Range.of(0, 4));
+
+        // TODO: add aggregate constraint
+
+        // TODO: add expected, which is exception
     }
 
     @Test

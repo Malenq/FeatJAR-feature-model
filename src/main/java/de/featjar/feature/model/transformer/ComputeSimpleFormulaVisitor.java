@@ -20,6 +20,7 @@
  */
 package de.featjar.feature.model.transformer;
 
+import de.featjar.base.data.IAttribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.visitor.ITreeVisitor;
@@ -39,6 +40,7 @@ import de.featjar.formula.structure.term.value.Variable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This visitor implements a simple translation of IFeatureModel to boolean
@@ -50,11 +52,21 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
     protected ArrayList<IFormula> constraints = new ArrayList<>();
     protected HashSet<Variable> variables = new HashSet<>();
+    private Map<Variable, Map<IAttribute<?>, Object>> attributes;
+    private Boolean hasCardinalityFeature = Boolean.FALSE;
 
-    public ComputeSimpleFormulaVisitor(ArrayList<IFormula> constraints, HashSet<Variable> variables) {
+    public Boolean getHasCardinalityFeature() {
+        return hasCardinalityFeature;
+    }
+
+    public ComputeSimpleFormulaVisitor(
+            ArrayList<IFormula> constraints,
+            HashSet<Variable> variables,
+            Map<Variable, Map<IAttribute<?>, Object>> attributes) {
 
         this.constraints = constraints;
         this.variables = variables;
+        this.attributes = attributes;
     }
 
     @Override
@@ -67,6 +79,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         // TODO: do not add variable if its a cardinality var. Add duplicates instead
         Variable variable = new Variable(featureName, feature.getType());
         variables.add(variable);
+
+        if (node.getAttributes().isPresent()) {
+            attributes.put(variable, node.getAttributes().get());
+        }
 
         // TODO take featureRanges into Account
         Result<IFeatureTree> potentialParentTree = node.getParent();
@@ -97,6 +113,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
     }
 
     private void handleCardinalityFeature(Literal featureLiteral, IFeatureTree node) {
+        hasCardinalityFeature = Boolean.TRUE;
 
         int lowerBound = node.getFeatureCardinalityLowerBound();
         int upperBound = node.getFeatureCardinalityUpperBound();
