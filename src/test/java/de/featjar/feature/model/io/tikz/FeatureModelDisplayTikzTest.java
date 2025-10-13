@@ -1,6 +1,7 @@
 package de.featjar.feature.model.io.tikz;
 
 import de.featjar.base.FeatJAR;
+import de.featjar.base.data.Attribute;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.*;
 import de.featjar.formula.structure.Expressions;
@@ -46,8 +47,13 @@ public class FeatureModelDisplayTikzTest {
         IFeature world = featureModel.mutate().addFeature("World");
         rootTree.mutate().addFeatureBelow(world);
 
+        Attribute<String> attribute = new Attribute<>("any", "test", String.class);
+        Attribute<String> attribute2 = new Attribute<>("anyd", "testd", String.class);
+
         IFeature wonderful = featureModel.addFeature("Wonderful");
         firstFeatureTree.mutate().addFeatureBelow(wonderful);
+        wonderful.mutate().setAttributeValue(attribute, "value");
+        wonderful.mutate().setAttributeValue(attribute2, "value2");
 
         IFeature beautiful = featureModel.addFeature("Beautiful");
         firstFeatureTree.mutate().addFeatureBelow(beautiful);

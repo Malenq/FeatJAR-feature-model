@@ -5,6 +5,7 @@ import de.featjar.base.tree.visitor.ITreeVisitor;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -26,9 +27,9 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
     public TraversalAction firstVisit(List<IFeatureTree> path) {
         IFeature feature = ITreeVisitor.getCurrentNode(path).getFeature();
 
-        stringBuilder.append("[").append(feature.getName().orElse(""));
+        new AttributeHelper(stringBuilder/*, Arrays.asList("abstract", "name")*/)
+                .writeAttributes(feature);
         insertNodeHead(feature);
-
         return TraversalAction.CONTINUE;
     }
 
@@ -42,7 +43,6 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
     public Result<String> getResult() {
         return Result.of(stringBuilder.toString());
     }
-
 
     private void insertNodeHead(IFeature feature) {
         if (feature.isAbstract()) {
