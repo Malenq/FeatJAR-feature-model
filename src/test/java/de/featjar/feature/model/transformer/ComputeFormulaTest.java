@@ -21,7 +21,7 @@
 package de.featjar.feature.model.transformer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.featjar.base.computation.ComputeConstant;
 import de.featjar.base.data.Attribute;
@@ -514,38 +514,18 @@ class ComputeFormulaTest {
         ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
         ComputeFormula computeFormula = new ComputeFormula(computeConstant);
 
-        try {
-            computeFormula.computeResult().get();
-
-        }
-        // TODO: UnsupportedOperationException is the one we want to catch. Internally, this is changed to
-        // 			NoSuchElementException: no object present
-        // The specific exception we want to catch is thrown in ReplaceAttributeAggregate. It is thrown but not present
-        // in stack trace
-        //        catch (UnsupportedOperationException re) {
-        catch (RuntimeException re) {
-            assertTrue(Boolean.TRUE);
-        }
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> computeFormula.computeResult().orElseThrow());
     }
 
     private void executeSimpleExpectedException() {
         ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
         ComputeFormula computeFormula = new ComputeFormula(computeConstant);
 
-        try {
-            computeFormula
-                    .set(ComputeFormula.SIMPLE_TRANSLATION, Boolean.TRUE)
-                    .computeResult()
-                    .get();
-
-        }
-        // TODO: UnsupportedOperationException is the one we want to catch. Internally, this is changed to
-        // 			NoSuchElementException: no object present
-        // The specific exception we want to catch is thrown in ReplaceAttributeAggregate. It is thrown but not present
-        // in stack trace
-        //        catch (UnsupportedOperationException re) {
-        catch (RuntimeException re) {
-            assertTrue(Boolean.TRUE);
-        }
+        assertThrows(UnsupportedOperationException.class, () -> computeFormula
+                .set(ComputeFormula.SIMPLE_TRANSLATION, Boolean.TRUE)
+                .computeResult()
+                .orElseThrow());
     }
 }
