@@ -125,17 +125,12 @@ class ComputeFormulaTest {
         IFeature childFeature2 = featureModel.mutate().addFeature("B");
         rootTree.mutate().addFeatureBelow(childFeature2);
 
-        //        expected = new Reference(new And(
-        //                new Literal("root"),
-        //                new Implies(new Literal("A_1"), new Literal("root")),
-        //                new Implies(new Literal("B_1.A_1"), new Literal("A_1")),
-        //                new Implies(new Literal("B_2.A_1"), new Literal("A_1")),
-        //                new Implies(new Literal("B_2.A_1"), new Literal("B_1.A_1")),
-        //                new Implies(new Literal("A_2"), new Literal("root")),
-        //                new Implies(new Literal("A_2"), new Literal("A_1")),
-        //                new Implies(new Literal("B_1.A_2"), new Literal("A_2")),
-        //                new Implies(new Literal("B_2.A_2"), new Literal("A_2")),
-        //                new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2"))));
+        expected = new Reference(new And(
+                new Literal("root"),
+                new Implies(new Literal("A_1"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("A_1")),
+                new Implies(new Literal("B"), new Literal("root"))));
 
         executeTest();
     }
