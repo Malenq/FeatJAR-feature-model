@@ -27,8 +27,10 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
     public TraversalAction firstVisit(List<IFeatureTree> path) {
         IFeature feature = ITreeVisitor.getCurrentNode(path).getFeature();
 
-        new AttributeHelper(stringBuilder/*, Arrays.asList("abstract", "name")*/)
-                .writeAttributes(feature);
+        //new AttributeHelper(stringBuilder/*, Arrays.asList("abstract", "name")*/)
+        //        .writeAttributes(feature);
+        stringBuilder.append("[");
+        insertAttributes(feature);
         insertNodeHead(feature);
         return TraversalAction.CONTINUE;
     }
@@ -44,6 +46,25 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
         return Result.of(stringBuilder.toString());
     }
 
+    private void insertAttributes(IFeature feature) {
+        if(feature.getAttributes().isPresent() && !feature.getAttributes().get().isEmpty()) {
+            stringBuilder.append(String.format("\\multicolumn{2}{c}{%s} \\\\\\hline",
+                    feature.getName().orElse("")));
+
+            feature.getAttributes().get().forEach((attribute, value) -> {
+                if(!attribute.getName().equals("name")) {
+                    stringBuilder.append(String.format("\\small\\texttt{%s (%s)} &\\small\\texttt{= %s} \\\\",
+                            attribute.getName(), attribute.getType().getSimpleName(),
+                            value.toString()));
+                }
+            });
+
+            stringBuilder.append(",align=ll");
+        } else {
+            stringBuilder.append(feature.getName().orElse(""));
+        }
+    }
+
     private void insertNodeHead(IFeature feature) {
         if (feature.isAbstract()) {
             stringBuilder.append(",abstract");
@@ -53,7 +74,13 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
             stringBuilder.append(",concrete");
         }
 
-        if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
+        if(feature.getFeatureTree().isPresent()) {
+            if (feature.getFeatureTree().get().getFeatureCardinalityUpperBound() > 1) {
+                stringBuilder.append(String.format(",featurecardinality={%d}{%d}",
+                        feature.getFeatureTree().get().getFeatureCardinalityLowerBound(),
+                        feature.getFeatureTree().get().getFeatureCardinalityUpperBound()));
+            }
+
             if (feature.getFeatureTree().get().isMandatory()) {
                 stringBuilder.append(",mandatory");
             } else {
