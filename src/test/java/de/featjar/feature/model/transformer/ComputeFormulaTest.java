@@ -204,14 +204,45 @@ class ComputeFormulaTest {
                         new Or(new Literal("A_1"), new Literal("A_2")),
                         new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
                 new Implies(new Literal("B"), new Or(new Literal("A_1"), new Literal("A_2"))),
-                new Implies(new Literal("C"), new Or(new Literal("A_1"), new Literal("A_2")))
-
-                // constraints for non-cardinality features can be just added for simple
-                // translation
-
-                ));
+                new Implies(new Literal("C"), new Or(new Literal("A_1"), new Literal("A_2")))));
 
         executeSimpleTest();
+    }
+
+    @Test
+    void localCrosstreeConstraint() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and set cardinality for the child feature
+        IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature3);
+
+        // cross-tree constraints
+        featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("C")));
+
+        expected = new Reference(new And(
+                new Literal("root"),
+                new Implies(new Literal("A_1"), new Literal("root")),
+                new Implies(new Literal("B.A_1"), new Literal("A_1")),
+                new Implies(new Literal("C.A_1"), new Literal("A_1")),
+                new Implies(new Literal("A_1"), new Implies(new Literal("B.A_1"), new Literal("C.A_1"))),
+                new Implies(new Literal("A_2"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("A_1")),
+                new Implies(new Literal("B.A_2"), new Literal("A_2")),
+                new Implies(new Literal("C.A_2"), new Literal("A_2")),
+                new Implies(new Literal("A_2"), new Implies(new Literal("B.A_2"), new Literal("C.A_2")))));
+
+        executeTest();
     }
 
     @Test

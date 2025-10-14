@@ -74,52 +74,19 @@ public class ComputeFormula extends AComputation<IFormula> {
         IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
         ArrayList<IFormula> constraints = new ArrayList<>();
         HashSet<Variable> variables = new HashSet<>();
-        // <<<<<<< HEAD
 
         IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
 
+        Collection<IConstraint> crossTreeConstr = featureModel.getConstraints();
+        for (IConstraint constr : crossTreeConstr) {
+            constraints.add(constr.getFormula());
+        }
+
         if (SIMPLE_TRANSLATION.get(dependencyList)) {
-
-            Collection<IConstraint> crossTreeConstr = featureModel.getConstraints();
-            for (IConstraint constr : crossTreeConstr) {
-                constraints.add(constr.getFormula());
-            }
-
             Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));
         } else {
             traverseFeatureModel(featureModel, constraints, variables);
         }
-        // =======
-        //        Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
-        //
-        //        featureModel.getFeatureTreeStream().forEach(node -> {
-        //            // TODO use better error value
-        //            IFeature feature = node.getFeature();
-        //            String featureName = feature.getName().orElse("");
-        //            Variable variable = new Variable(featureName, feature.getType());
-        //            variables.add(variable);
-        //
-        //            if(node.getAttributes().isPresent()) {
-        //                attributes.put(variable, node.getAttributes().get());
-        //            }
-        //
-        //            // TODO take featureRanges into Account
-        //            Result<IFeatureTree> potentialParentTree = node.getParent();
-        //            Literal featureLiteral = Expressions.literal(featureName);
-        //            if (potentialParentTree.isEmpty()) {
-        //                handleRoot(constraints, featureLiteral, node);
-        //            } else {
-        //                handleParent(constraints, featureLiteral, node);
-        //            }
-        //            handleGroups(constraints, featureLiteral, node);
-        //        });
-        //
-        //        ReplaceAttributeAggregate replaceAttributeAggregate = new ReplaceAttributeAggregate(attributes);
-        //        featureModel.getConstraints().forEach(constraint -> {
-        //            Trees.traverse(constraint.getFormula(), replaceAttributeAggregate);
-        //            constraints.add(constraint.getFormula());
-        //        });
-        // >>>>>>> main_malenq
 
         Reference reference = new Reference(new And(constraints));
         reference.setFreeVariables(variables);
@@ -140,6 +107,9 @@ public class ComputeFormula extends AComputation<IFormula> {
             addChildConstraints(root, constraints);
         }
     }
+
+    ArrayList<IFormula> originalCrossTreeConstraints = new ArrayList<IFormula>();
+    ArrayList<IFormula> childCrossTreeConstraints = new ArrayList<IFormula>();
 
     private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints) {
 
@@ -181,6 +151,16 @@ public class ComputeFormula extends AComputation<IFormula> {
                     constraintGroupLiterals.add(currentLiteral);
 
                     addChildConstraints(cardinalityClone, constraints);
+
+                    if (!childCrossTreeConstraints.isEmpty()) {
+
+                        constraints.removeAll(childCrossTreeConstraints);
+
+                        for (IFormula constr : childCrossTreeConstraints) {
+                            constraints.add(new Implies(currentLiteral, constr));
+                        }
+                        childCrossTreeConstraints.clear();
+                    }
                 }
                 // check if 0 and do not add implication
                 if (lowerBound != 0)
@@ -205,7 +185,103 @@ public class ComputeFormula extends AComputation<IFormula> {
 
                 addChildConstraints(child, constraints);
             }
+
+            ArrayList<IFormula> matchingConstraints = getConstraints(child, constraints);
+            if (!matchingConstraints.isEmpty()) {
+                if (cardinalityFeatureAbove(child)) {
+
+                    // only add "pure" matching Constraints -
+                    originalCrossTreeConstraints.addAll(filterDuplicatedLiterals(matchingConstraints));
+                    constraints.removeAll(matchingConstraints);
+                    childCrossTreeConstraints.removeAll(matchingConstraints);
+
+                    replaceWithDuplicates(matchingConstraints, child, constraints);
+
+                    //        			for (IFormula constraint : matchingConstraints) {
+                    //
+                    //        				IFormula newConstraint = (IFormula) constraint.cloneTree();
+                    //
+                    //        				newConstraint.replaceChild(
+                    //        						new Literal(child.getFeature().getName().get()),
+                    //        						new Literal(getLiteralName(child))
+                    //        				);
+                    //
+                    //        				constraints.add(newConstraint);
+                    //        				childCrossTreeConstraints.add(newConstraint);
+                    //					}
+                }
+            } else if (!originalCrossTreeConstraints.isEmpty()) {
+                matchingConstraints = getConstraints(child, originalCrossTreeConstraints);
+
+                replaceWithDuplicates(matchingConstraints, child, constraints);
+
+                //        		for (IFormula constraint : matchingConstraints) {
+                //
+                //    				IFormula newConstraint = (IFormula) constraint.cloneTree();
+                //
+                //    				newConstraint.replaceChild(
+                //    						new Literal(child.getFeature().getName().get()),
+                //    						new Literal(getLiteralName(child))
+                //    				);
+                //
+                //    				constraints.add(newConstraint);
+                //    				childCrossTreeConstraints.add(newConstraint);
+                //
+                //				}
+
+                // TODO: check - this does nothing does it?
+                originalCrossTreeConstraints.removeAll(constraints);
+            }
         }
+    }
+
+    private void replaceWithDuplicates(
+            ArrayList<IFormula> matchingConstraints, IFeatureTree child, ArrayList<IFormula> constraints) {
+        for (IFormula constraint : matchingConstraints) {
+
+            IFormula newConstraint = (IFormula) constraint.cloneTree();
+
+            newConstraint.replaceChild(
+                    new Literal(child.getFeature().getName().get()), new Literal(getLiteralName(child)));
+
+            constraints.add(newConstraint);
+            childCrossTreeConstraints.add(newConstraint);
+        }
+    }
+
+    private ArrayList<IFormula> filterDuplicatedLiterals(ArrayList<IFormula> matchingConstraints) {
+
+        ArrayList<IFormula> filteredList = new ArrayList<IFormula>();
+
+        for (IFormula constraint : matchingConstraints) {
+
+            Boolean foundDuplicateChar = false;
+            for (Variable var : constraint.getVariables()) {
+
+                if (var.getName().contains(".") || var.getName().contains("_")) {
+
+                    foundDuplicateChar = true;
+                }
+            }
+            if (!foundDuplicateChar) {
+                filteredList.add(constraint);
+            }
+        }
+
+        return filteredList;
+    }
+
+    private ArrayList<IFormula> getConstraints(IFeatureTree node, ArrayList<IFormula> constraints) {
+        ArrayList<IFormula> matchingConstraints = new ArrayList<IFormula>();
+        for (IFormula constraint : constraints) {
+
+            Literal nodeLiteral = new Literal(node.getFeature().getName().get());
+
+            if (constraint.hasChild(nodeLiteral) || constraint.equals(nodeLiteral)) {
+                matchingConstraints.add(constraint);
+            }
+        }
+        return matchingConstraints;
     }
 
     private String getLiteralName(IFeatureTree node) {
