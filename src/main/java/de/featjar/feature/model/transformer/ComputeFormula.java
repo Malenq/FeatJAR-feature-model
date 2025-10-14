@@ -186,7 +186,6 @@ public class ComputeFormula extends AComputation<IFormula> {
                 if (lowerBound != 0)
                     constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, constraintGroupLiterals)));
 
-                return;
             } else {
 
                 String literalName = getLiteralName(child);
