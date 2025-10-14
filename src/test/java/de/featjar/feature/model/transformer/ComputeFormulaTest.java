@@ -472,6 +472,7 @@ class ComputeFormulaTest {
         treeC.mutate().setFeatureCardinality(Range.of(0, 2));  
 
         // Add the constraint B ⇒ C
+        featureModel.mutate().addConstraint(new Implies(new Literal("C"), new Literal("B")));
         featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("C")));
         featureModel.mutate().addConstraint(new Or( new Not(new Literal("D")), new And(new Literal("C"), new Literal("B"))));
 
