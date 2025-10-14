@@ -110,8 +110,8 @@ public class ComputeFormula extends AComputation<IFormula> {
             Variable variable = new Variable(
                     root.getFeature().getName().get(), root.getFeature().getType());
             variables.add(variable);
-            if (root.getAttributes().isPresent()) {
-                attributes.put(variable, root.getAttributes().get());
+            if (root.getFeature().getAttributes().isPresent()) {
+                attributes.put(variable, root.getFeature().getAttributes().get());
             }
 
             Literal rootLiteral = new Literal(root.getFeature().getName().orElse(""));
@@ -135,8 +135,8 @@ public class ComputeFormula extends AComputation<IFormula> {
         Variable variable = new Variable(
                 node.getFeature().getName().get(), node.getFeature().getType());
         variables.add(variable);
-        if (node.getAttributes().isPresent()) {
-            attributes.put(variable, node.getAttributes().get());
+        if (node.getFeature().getAttributes().isPresent()) {
+            attributes.put(variable, node.getFeature().getAttributes().get());
         }
 
         Literal parentLiteral = new Literal(getLiteralName(node));

@@ -39,7 +39,8 @@ public class ReplaceAttributeAggregate implements ITreeVisitor<IFormula, Void> {
         if (formula instanceof IAttributeAggregate) {
 
             if (hasCardinalityFeatures) {
-                throw new RuntimeException("Attribute aggregates and cardinality features can not be translated.");
+                throw new UnsupportedOperationException(
+                        "Attribute aggregates and cardinality features can not be translated.");
             }
 
             final Result<IFormula> parent = ITreeVisitor.getParentNode(path);

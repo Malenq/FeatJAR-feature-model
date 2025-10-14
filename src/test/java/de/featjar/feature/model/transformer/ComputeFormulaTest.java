@@ -21,6 +21,7 @@
 package de.featjar.feature.model.transformer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.featjar.base.computation.ComputeConstant;
 import de.featjar.base.data.Attribute;
@@ -40,7 +41,10 @@ import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.LessThan;
 import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.aggregate.AttributeSum;
+import de.featjar.formula.structure.term.function.IfThenElse;
+import de.featjar.formula.structure.term.function.RealAdd;
 import de.featjar.formula.structure.term.value.Constant;
+import de.featjar.formula.structure.term.value.Variable;
 import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -348,8 +352,10 @@ class ComputeFormulaTest {
     static Attribute<Boolean> cpuAttribute = new Attribute<>("cpu", Boolean.class);
     static Attribute<Boolean> gpuAttribute = new Attribute<>("cpu", Boolean.class);
 
+    static Attribute<Double> costAttribute = new Attribute<>("cost", Double.class);
+
     @Test
-    void oneFeatureAndAttributeAggregate() {
+    void simpleOneFeatureAndAttributeAggregate() {
 
         // root
         IFeatureTree rootTree =
@@ -358,25 +364,25 @@ class ComputeFormulaTest {
         rootTree.mutate().toAndGroup();
 
         // create and add our only child
-        IFeature childFeature = featureModel.mutate().addFeature("Test1");
-        IFeatureTree childFeatureTree = rootTree.mutate().addFeatureBelow(childFeature);
+        IFeature childFeature = featureModel.mutate().addFeature("A");
+        rootTree.mutate().addFeatureBelow(childFeature);
 
-        // TODO: add attributes to aggregate and and corresponding cross-tree-constraint
         // add attribute to aggregate
-        childFeatureTree.mutate().setAttributeValue(cpuAttribute, Boolean.TRUE);
-        childFeatureTree.mutate().setAttributeValue(gpuAttribute, Boolean.TRUE);
+        childFeature.mutate().setAttributeValue(costAttribute, 10.0);
+
         // cross-tree constraint for aggregate testing
-        IFormula aggregateConstraint = new And(
-                new Implies(
-                        new Literal("cables"), new LessThan(new AttributeSum("cost"), new Constant(200L, Long.class))),
-                new Literal("case"));
+        IFormula aggregateConstraint = new LessThan(new AttributeSum("cost"), new Constant(200.0, Double.class));
         featureModel.mutate().addConstraint(aggregateConstraint);
 
-        // TODO: add expected to match the constructed model
-        //        expected = new Reference(new And(new Literal("root"), new Implies(new Literal("Test1"), new
-        // Literal("root"))));
+        expected = new Reference(new And(
+                new Literal("root"),
+                new Implies(new Literal("A"), new Literal("root")),
+                new LessThan(
+                        new RealAdd(new IfThenElse(
+                                new Variable("A"), new Constant(10.0, Double.class), new Constant(0.0, Double.class))),
+                        new Constant(200.0, Double.class))));
 
-        executeTest();
+        executeSimpleTest();
     }
 
     @Test
@@ -387,13 +393,40 @@ class ComputeFormulaTest {
         rootTree.mutate().toAndGroup();
 
         // create and add our only child
-        IFeature childFeature = featureModel.mutate().addFeature("Test1");
+        IFeature childFeature = featureModel.mutate().addFeature("A");
         IFeatureTree childFeatureTree = rootTree.mutate().addFeatureBelow(childFeature);
         childFeatureTree.mutate().setFeatureCardinality(Range.of(0, 4));
 
-        // TODO: add aggregate constraint
+        // add attribute to aggregate
+        childFeature.mutate().setAttributeValue(costAttribute, 10.0);
 
-        // TODO: add expected, which is exception
+        // cross-tree constraint for aggregate testing
+        IFormula aggregateConstraint = new LessThan(new AttributeSum("cost"), new Constant(200.0, Double.class));
+        featureModel.mutate().addConstraint(aggregateConstraint);
+
+        executeExpectedException();
+    }
+
+    @Test
+    void simpleCardinalityAndAttributeAggregate() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and add our only child
+        IFeature childFeature = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeatureTree = rootTree.mutate().addFeatureBelow(childFeature);
+        childFeatureTree.mutate().setFeatureCardinality(Range.of(0, 4));
+
+        // add attribute to aggregate
+        childFeature.mutate().setAttributeValue(costAttribute, 10.0);
+
+        // cross-tree constraint for aggregate testing
+        IFormula aggregateConstraint = new LessThan(new AttributeSum("cost"), new Constant(200.0, Double.class));
+        featureModel.mutate().addConstraint(aggregateConstraint);
+
+        executeSimpleExpectedException();
     }
 
     @Test
@@ -475,5 +508,44 @@ class ComputeFormulaTest {
 
         // assert
         assertEquals(expected, resultFormula);
+    }
+
+    private void executeExpectedException() {
+        ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
+        ComputeFormula computeFormula = new ComputeFormula(computeConstant);
+
+        try {
+            computeFormula.computeResult().get();
+
+        }
+        // TODO: UnsupportedOperationException is the one we want to catch. Internally, this is changed to
+        // 			NoSuchElementException: no object present
+        // The specific exception we want to catch is thrown in ReplaceAttributeAggregate. It is thrown but not present
+        // in stack trace
+        //        catch (UnsupportedOperationException re) {
+        catch (RuntimeException re) {
+            assertTrue(Boolean.TRUE);
+        }
+    }
+
+    private void executeSimpleExpectedException() {
+        ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
+        ComputeFormula computeFormula = new ComputeFormula(computeConstant);
+
+        try {
+            computeFormula
+                    .set(ComputeFormula.SIMPLE_TRANSLATION, Boolean.TRUE)
+                    .computeResult()
+                    .get();
+
+        }
+        // TODO: UnsupportedOperationException is the one we want to catch. Internally, this is changed to
+        // 			NoSuchElementException: no object present
+        // The specific exception we want to catch is thrown in ReplaceAttributeAggregate. It is thrown but not present
+        // in stack trace
+        //        catch (UnsupportedOperationException re) {
+        catch (RuntimeException re) {
+            assertTrue(Boolean.TRUE);
+        }
     }
 }

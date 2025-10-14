@@ -80,8 +80,9 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         Variable variable = new Variable(featureName, feature.getType());
         variables.add(variable);
 
-        if (node.getAttributes().isPresent()) {
-            attributes.put(variable, node.getAttributes().get());
+        if (node.getFeature().getAttributes().isPresent()) {
+            // name is an attribute as well
+            attributes.put(variable, node.getFeature().getAttributes().get());
         }
 
         // TODO take featureRanges into Account
