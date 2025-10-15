@@ -418,7 +418,7 @@ public class ComputeFormula extends AComputation<IFormula> {
        List<IFeatureTree> contextualFeatureNames = new ArrayList<>();
         
        // 1. case: feature is the current context feature
-        if (contextFeature.getFeature() == targetFeature) {
+        if (contextFeature.getFeature().getName().get().equals(targetFeature.getName().get())) {
         	contextualFeatureNames.add(contextFeature);
     		return contextualFeatureNames;
     	}
@@ -509,13 +509,18 @@ public class ComputeFormula extends AComputation<IFormula> {
                          	IFormula replacement = new Literal("");
                          	if (isGlobal) {
                          		// 2., 3. and 4. case: feature is not the current context feature
-                         		if (contextFeatureName.getFeature() != getNextCardinalityParent(currentFeatureTree)) {
+                         		IFeatureTree currentCardinalityParent = getNextCardinalityParent(currentFeatureTree);
+                         		if (!contextFeatureName.getFeature().getName().get().equals(currentCardinalityParent.getFeature().getName().get())) {
                          			// 4. case: context of feature is located under current context feature 
                          			if (contextUnderCurrentContext(contextFeatureName, currentFeatureTree)) {
                          				replacement = createOrReplacementWithContext(contextFeatureName, feature);
+                         			} else {
+                         				// 2. + 3. case: feature's context is independent from current context
+                         			    replacement = createOrReplacementWithoutContext(feature);
                          			}
-                         			// 2. + 3. case: feature's context is independent from current context
-                         			replacement = createOrReplacementWithoutContext(feature);
+                         		} else {
+                         			List<IFeatureTree> contextualFeatureName = findContextualFeatureNames(contextFeatureName, feature);
+                             		replacement = new Literal(contextualFeatureName.get(0).getAttributeValue(literalNameAttribute).orElse(""));
                          		}
                          	} else {
                          		List<IFeatureTree> contextualFeatureName = findContextualFeatureNames(contextFeatureName, feature);
@@ -575,14 +580,19 @@ public class ComputeFormula extends AComputation<IFormula> {
     }
     
     private boolean contextUnderCurrentContext(IFeatureTree currentContex, IFeatureTree context) {
-    	context = getNextCardinalityParent(context);
-    	
-    	if (context == null) {
-    		return false;
-    	} else if (context == currentContex) {
-    		return true;
-    	} else {
-    		return contextUnderCurrentContext(currentContex, context);
-    	}
+    	  IFeatureTree currentNode = context;
+
+    	  while (currentNode != null) {
+    	      // Check if the current node in our walk is the one we're looking for.
+    	      if (currentNode == context) {
+    	          return true; // We found it in the ancestry chain.
+    	      }
+    	      // If not, move up to the next parent for the next iteration.
+    	      currentNode = getNextCardinalityParent(currentNode);
+    	  }
+
+    	  // If the loop finishes, it means we reached the top (currentNode became null)
+    	  // without ever finding currentContext.
+    	  return false;
     }
 }
