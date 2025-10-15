@@ -20,6 +20,7 @@
  */
 package de.featjar.feature.model.transformer;
 
+import de.featjar.base.FeatJAR;
 import de.featjar.base.computation.AComputation;
 import de.featjar.base.computation.Computations;
 import de.featjar.base.computation.Dependency;
@@ -43,6 +44,8 @@ import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
+import de.featjar.formula.structure.predicate.NotEquals;
+import de.featjar.formula.structure.term.value.Constant;
 import de.featjar.formula.structure.term.value.Variable;
 import java.util.*;
 
@@ -73,6 +76,28 @@ public class ComputeFormula extends AComputation<IFormula> {
         HashSet<Variable> variables = new HashSet<>();
         Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
 
+/*            IFormula featureLiteral;
+            if (feature.getType().equals(Boolean.class)) {
+                featureLiteral = Expressions.literal(featureName);
+            } else if (feature.getType().equals(Integer.class)) {
+                featureLiteral = new NotEquals(variable, new Constant(0));
+            } else if(feature.getType().equals(Float.class)) {
+                featureLiteral = new NotEquals(variable, new Constant((float) 0.0));
+            } else {
+                FeatJAR.log().warning("Could not handle type "+ feature.getType());
+                return;
+            }
+
+            // TODO take featureRanges into Account
+            Result<IFeatureTree> potentialParentTree = node.getParent();
+
+            if (potentialParentTree.isEmpty()) {
+                handleRoot(constraints, featureLiteral, node);
+            } else {
+                handleParent(constraints, featureLiteral, node);
+            }
+            handleGroups(constraints, featureLiteral, node);
+*/
         if (SIMPLE_TRANSLATION.get(dependencyList)) {
             IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
 
@@ -98,6 +123,18 @@ public class ComputeFormula extends AComputation<IFormula> {
         return Result.of(reference);
     }
 
+/*
+    private void handleParent(ArrayList<IFormula> constraints, IFormula featureLiteral, IFeatureTree node) {
+        constraints.add(new Implies(
+                featureLiteral,
+                Expressions.literal(
+                        node.getParent().get().getFeature().getName().orElse(""))));
+    }
+
+    private void handleRoot(ArrayList<IFormula> constraints, IFormula featureLiteral, IFeatureTree node) {
+        if (node.isMandatory()) {
+            constraints.add(featureLiteral);
+*/
     private void traverseFeatureModel(
             IFeatureModel featureModel,
             ArrayList<IFormula> constraints,
@@ -235,6 +272,7 @@ public class ComputeFormula extends AComputation<IFormula> {
         return false;
     }
 
+   // private void handleGroups(ArrayList<IFormula> constraints, IFormula featureLiteral, IFeatureTree node) {
     private void handleGroups(Literal featureLiteral, IFeatureTree node, ArrayList<IFormula> constraints) {
         List<Group> childrenGroups = node.getChildrenGroups();
         int groupCount = childrenGroups.size();
