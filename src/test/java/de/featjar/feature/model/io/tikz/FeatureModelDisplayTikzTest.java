@@ -17,6 +17,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
+ * Test the full output with a test feature model and attributes, constrains and more
+ *
  * @author Felix Behme
  * @author Lara Merza
  * @author Jonas Hanke
