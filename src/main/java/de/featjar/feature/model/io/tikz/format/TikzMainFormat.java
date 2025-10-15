@@ -82,7 +82,7 @@ public class TikzMainFormat {
                     .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
                     .writeDraw("(0.1,0) -- +(0.2,-0.4)")
                     .writeFill("(0,-0.2) arc (240:300:0.2)")
-                    .writeNode("[or,label=right:Or Group] {}");
+                    .writeNode("[label=right:Or Group] {}");
         }
 
         if (stringBuilder.indexOf(",alternative") != -1) {

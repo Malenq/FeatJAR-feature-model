@@ -1,6 +1,8 @@
 package de.featjar.feature.model.io.tikz.color;
 
 /**
+ * Color in tikz for later implemntation (colors doesnt exists in features in the moment)
+ *
  * @author Felix Behme
  * @author Lara Merza
  * @author Jonas Hanke

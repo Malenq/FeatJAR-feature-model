@@ -4,8 +4,6 @@ import de.featjar.base.data.Result;
 import de.featjar.base.tree.visitor.ITreeVisitor;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
-
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -29,8 +27,12 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
 
         //new AttributeHelper(stringBuilder/*, Arrays.asList("abstract", "name")*/)
         //        .writeAttributes(feature);
-        stringBuilder.append("[");
-        insertAttributes(feature);
+        //stringBuilder.append("[");
+        //insertAttributes(feature);
+        new AttributeHelper(feature, stringBuilder)
+                .addFilterValue("name")
+                .setFilterType(AttributeHelper.FilterType.DISPLAY)
+                .build();
         insertNodeHead(feature);
         return TraversalAction.CONTINUE;
     }
@@ -44,25 +46,6 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
     @Override
     public Result<String> getResult() {
         return Result.of(stringBuilder.toString());
-    }
-
-    private void insertAttributes(IFeature feature) {
-        if(feature.getAttributes().isPresent() && !feature.getAttributes().get().isEmpty()) {
-            stringBuilder.append(String.format("\\multicolumn{2}{c}{%s} \\\\\\hline",
-                    feature.getName().orElse("")));
-
-            feature.getAttributes().get().forEach((attribute, value) -> {
-                if(!attribute.getName().equals("name")) {
-                    stringBuilder.append(String.format("\\small\\texttt{%s (%s)} &\\small\\texttt{= %s} \\\\",
-                            attribute.getName(), attribute.getType().getSimpleName(),
-                            value.toString()));
-                }
-            });
-
-            stringBuilder.append(",align=ll");
-        } else {
-            stringBuilder.append(feature.getName().orElse(""));
-        }
     }
 
     private void insertNodeHead(IFeature feature) {
@@ -89,17 +72,28 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
         }
 
         if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
-            if (feature.getFeatureTree().get().getParentGroup().isPresent() &&
-                    feature.getFeatureTree().get().getParentGroup().get().isOr()) {
+            IFeatureTree featureTree = feature.getFeatureTree().get();
+            if (featureTree.getParentGroup().isPresent() &&
+                    featureTree.getParentGroup().get().isOr() && hasMoreChildrens(feature)) {
                 stringBuilder.append(",or");
             }
         }
         if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
-            if (feature.getFeatureTree().get().getParentGroup().isPresent() &&
-                    feature.getFeatureTree().get().getParentGroup().get().isAlternative()) {
+            IFeatureTree featureTree = feature.getFeatureTree().get();
+            if (featureTree.getParentGroup().isPresent() &&
+                    featureTree.getParentGroup().get().isAlternative() && hasMoreChildrens(feature)) {
                 stringBuilder.append(",alternative");
             }
         }
+    }
+
+    private boolean hasMoreChildrens(IFeature feature) {
+        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
+        if (featureTree == null) {
+            return false;
+        }
+
+        return featureTree.getChildren().size() >= 2;
     }
 
     private boolean isNotRootFeature(IFeature feature) {
