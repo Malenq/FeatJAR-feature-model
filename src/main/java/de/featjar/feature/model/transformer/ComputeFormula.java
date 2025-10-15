@@ -20,6 +20,20 @@
  */
 package de.featjar.feature.model.transformer;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
+
 import de.featjar.base.computation.AComputation;
 import de.featjar.base.computation.Computations;
 import de.featjar.base.computation.Dependency;
@@ -45,17 +59,6 @@ import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
 
 /**
  * Transforms a feature model into a boolean formula. Supports a simple way of
@@ -73,6 +76,7 @@ public class ComputeFormula extends AComputation<IFormula> {
     static Attribute<String> literalNameAttribute = new Attribute<>("literalName", String.class);
     private Map<IFeature, List<IFeatureTree>> featureToCardinalityNames = new HashMap<>();
     private Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren = new HashMap<>();
+    private List<CustomObj> featureToChild2 = new ArrayList<CustomObj>();
 
     public ComputeFormula(IComputation<IFeatureModel> formula) {
         super(formula, Computations.of(Boolean.FALSE));
@@ -486,5 +490,34 @@ public class ComputeFormula extends AComputation<IFormula> {
         }
 
         return finalConstraints;
+    }
+    
+    private Map<List<IFeatureTree>, List<IConstraint>> findContextualFeatures(Collection<IConstraint> crossTreeConstr) {
+    	Map<List<IFeatureTree>, List<IConstraint>> contextsToConstraints = new HashMap<>();
+    	
+    	// iterate through all constraints 
+    	for (IConstraint constraint : crossTreeConstr) {
+    	    // create a list to store the contextFeatures
+    		 Set<IFeatureTree> contextFeatures = new HashSet<>();
+    		
+    		// identify the contained features
+            LinkedHashSet<IFeature> features = constraint.getReferencedFeatures();
+            
+            // find context feature for every feature 
+            for (IFeature feature : features) {
+            	IFeatureTree contextFeature =
+                        getNextCardinalityParent(feature.getFeatureTree().get());
+            	contextFeatures.add(contextFeature);
+            }
+            
+            List<IFeatureTree> key = new ArrayList<>(contextFeatures);
+            
+            
+        
+    		
+    	}
+    	
+    	// find next cardinality feature for every feature 
+    	
     }
 }
