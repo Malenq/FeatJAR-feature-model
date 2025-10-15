@@ -20,6 +20,7 @@
  */
 package de.featjar.feature.model.transformer;
 
+import de.featjar.base.FeatJAR;
 import de.featjar.base.data.IAttribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
@@ -36,6 +37,8 @@ import de.featjar.formula.structure.connective.Choose;
 import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.predicate.Literal;
+import de.featjar.formula.structure.predicate.NotEquals;
+import de.featjar.formula.structure.term.value.Constant;
 import de.featjar.formula.structure.term.value.Variable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -50,10 +53,10 @@ import java.util.Map;
  */
 public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, Void> {
 
-    protected ArrayList<IFormula> constraints = new ArrayList<>();
-    protected HashSet<Variable> variables = new HashSet<>();
+    protected ArrayList<IFormula> constraints;
+    protected HashSet<Variable> variables;
     private Map<Variable, Map<IAttribute<?>, Object>> attributes;
-    private Boolean hasCardinalityFeature = Boolean.FALSE;
+    private Boolean hasCardinalityFeature;
 
     public Boolean getHasCardinalityFeature() {
         return hasCardinalityFeature;
@@ -63,10 +66,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
             ArrayList<IFormula> constraints,
             HashSet<Variable> variables,
             Map<Variable, Map<IAttribute<?>, Object>> attributes) {
-
         this.constraints = constraints;
         this.variables = variables;
         this.attributes = attributes;
+        this.hasCardinalityFeature = true;
     }
 
     @Override
@@ -76,6 +79,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         // TODO use better error value
         IFeature feature = node.getFeature();
         String featureName = feature.getName().orElse("");
+
         // TODO: do not add variable if its a cardinality var. Add duplicates instead
         Variable variable = new Variable(featureName, feature.getType());
         variables.add(variable);
@@ -87,33 +91,53 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         // TODO take featureRanges into Account
         Result<IFeatureTree> potentialParentTree = node.getParent();
-        Literal featureLiteral = Expressions.literal(featureName);
+        //Literal featureLiteral = Expressions.literal(featureName);
+
+        IFormula featureFormula = createFeatureFormel(node.getFeature());
+
         if (potentialParentTree.isEmpty()) {
-            handleRoot(featureLiteral, node);
+            handleRoot(featureFormula, node);
         } else if (node.getFeatureCardinalityUpperBound() > 1) {
-            handleCardinalityFeature(featureLiteral, node);
+            handleCardinalityFeature(featureFormula, node);
         } else {
-            handleParent(featureLiteral, node);
+            handleParent(featureFormula, node);
         }
 
-        handleGroups(featureLiteral, node);
+        handleGroups(featureFormula, node);
 
         return ITreeVisitor.super.firstVisit(path);
     }
 
-    private void handleParent(Literal featureLiteral, IFeatureTree node) {
-        // cardinal features must not be a parent
-        Literal parentLiteral = getNextNonCardinalityParent(node);
-        constraints.add(new Implies(featureLiteral, parentLiteral));
+    private IFormula createFeatureFormel(IFeature feature) {
+        return createFeatureFormel(feature, feature.getName().orElse(""));
     }
 
-    private void handleRoot(Literal featureLiteral, IFeatureTree node) {
+    private IFormula createFeatureFormel(IFeature feature, String featureName) {
+        if (feature.getType().equals(Boolean.class)) {
+            return Expressions.literal(featureName);
+        } else if (feature.getType().equals(Integer.class)) {
+            return new NotEquals(new Variable(featureName, feature.getType()), new Constant(0));
+        } else if(feature.getType().equals(Float.class) || feature.getType().equals(Double.class)) {
+            return new NotEquals(new Variable(featureName, Double.class), new Constant(0.0));
+        } else {
+            FeatJAR.log().warning("Could not handle type "+ feature.getType());
+            return null;
+        }
+    }
+
+    private void handleParent(IFormula featureLiteral, IFeatureTree node) {
+        // cardinal features must not be a parent
+        IFormula parentFormula = getNextNonCardinalityParent(node);
+        constraints.add(new Implies(featureLiteral, parentFormula));
+    }
+
+    private void handleRoot(IFormula featureLiteral, IFeatureTree node) {
         if (node.isMandatory()) {
             constraints.add(featureLiteral);
         }
     }
 
-    private void handleCardinalityFeature(Literal featureLiteral, IFeatureTree node) {
+    private void handleCardinalityFeature(IFormula featureFormula, IFeatureTree node) {
         hasCardinalityFeature = Boolean.TRUE;
 
         int lowerBound = node.getFeatureCardinalityLowerBound();
@@ -123,28 +147,27 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         // add literals and implication to parent
         String literalName = "";
-        Literal parentLiteral = getNextNonCardinalityParent(node);
+        IFormula parentFormula = getNextNonCardinalityParent(node);
         for (int i = 1; i <= upperBound; i++) {
-
             literalName = node.getFeature().getName().get() + "_" + i;
-            featureLiteral = new Literal(literalName);
-            handleParent(featureLiteral, node);
+            featureFormula = createFeatureFormel(node.getFeature(),  literalName);
+            handleParent(featureFormula, node);
 
             if (i > 1) {
                 // add to implication chain
                 IFormula previousLiteral = featureList.get(featureList.size() - 1);
-                constraints.add(new Implies(featureLiteral, previousLiteral));
+                constraints.add(new Implies(featureFormula, previousLiteral));
             }
 
-            featureList.add(featureLiteral);
+            featureList.add(featureFormula);
         }
 
         // add cardinality constraint
         // check if 0 and do not add implication
-        if (lowerBound != 0) constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, featureList)));
+        if (lowerBound != 0) constraints.add(new Implies(parentFormula, new AtLeast(lowerBound, featureList)));
     }
 
-    private Literal getNextNonCardinalityParent(IFeatureTree node) {
+    private IFormula getNextNonCardinalityParent(IFeatureTree node) {
 
         // if it is possible that root can be as well a cardinality feature - there must
         // be an alternative
@@ -154,10 +177,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
             return getNextNonCardinalityParent(node);
         }
 
-        return Expressions.literal(node.getFeature().getName().orElse(""));
+        return createFeatureFormel(node.getFeature());
     }
 
-    private void handleGroups(Literal featureLiteral, IFeatureTree node) {
+    private void handleGroups(IFormula featureFormula, IFeatureTree node) {
         List<Group> childrenGroups = node.getChildrenGroups();
         int groupCount = childrenGroups.size();
         ArrayList<List<IFormula>> groupLiterals = new ArrayList<>(groupCount);
@@ -168,7 +191,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         // if node is cardinality feature, set feature literal to parent with no
         // cardinality
         if (node.getFeatureCardinalityUpperBound() > 1) {
-            featureLiteral = getNextNonCardinalityParent(node);
+            featureFormula = getNextNonCardinalityParent(node);
         }
 
         List<? extends IFeatureTree> children = node.getChildren();
@@ -177,7 +200,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
                     Expressions.literal(childNode.getFeature().getName().orElse(""));
 
             if (childNode.isMandatory()) {
-                constraints.add(new Implies(featureLiteral, childLiteral));
+                constraints.add(new Implies(featureFormula, childLiteral));
             }
 
             int groupID = childNode.getParentGroupID();
@@ -192,22 +215,22 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
             Group group = childrenGroups.get(i);
             if (group != null) {
                 if (group.isOr()) {
-                    constraints.add(new Implies(featureLiteral, new Or(groupLiterals.get(i))));
+                    constraints.add(new Implies(featureFormula, new Or(groupLiterals.get(i))));
                 } else if (group.isAlternative()) {
-                    constraints.add(new Implies(featureLiteral, new Choose(1, groupLiterals.get(i))));
+                    constraints.add(new Implies(featureFormula, new Choose(1, groupLiterals.get(i))));
                 } else {
                     int lowerBound = group.getLowerBound();
                     int upperBound = group.getUpperBound();
                     if (lowerBound > 0) {
                         if (upperBound != Range.OPEN) {
                             constraints.add(new Implies(
-                                    featureLiteral, new Between(lowerBound, upperBound, groupLiterals.get(i))));
+                                    featureFormula, new Between(lowerBound, upperBound, groupLiterals.get(i))));
                         } else {
-                            constraints.add(new Implies(featureLiteral, new AtMost(upperBound, groupLiterals.get(i))));
+                            constraints.add(new Implies(featureFormula, new AtMost(upperBound, groupLiterals.get(i))));
                         }
                     } else {
                         if (upperBound != Range.OPEN) {
-                            constraints.add(new Implies(featureLiteral, new AtLeast(lowerBound, groupLiterals.get(i))));
+                            constraints.add(new Implies(featureFormula, new AtLeast(lowerBound, groupLiterals.get(i))));
                         }
                     }
                 }
