@@ -46,12 +46,20 @@ import java.util.List;
  * formula. In this implementation, a cardinality feature can not be a parent.
  * The next non-cardinality feature will be the parent instead within the
  * boolean representation.
+ *
+ * @author Klara Surmeier
+ * @author Nermine Mansour
+ * @author Malena Horstmann
  */
 public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, Void> {
 
-    protected ArrayList<IFormula> constraints = new ArrayList<>();
-    protected HashSet<Variable> variables = new HashSet<>();
+    protected ArrayList<IFormula> constraints;
+    protected HashSet<Variable> variables;
 
+    /**
+     * Constructor initializes constraints and variables originated from the
+     * FeatureModel related to the given FeatureTree.
+     */
     public ComputeSimpleFormulaVisitor(ArrayList<IFormula> constraints, HashSet<Variable> variables) {
 
         this.constraints = constraints;
@@ -69,7 +77,6 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         Variable variable = new Variable(featureName, feature.getType());
         variables.add(variable);
 
-        // TODO take featureRanges into Account
         Result<IFeatureTree> potentialParentTree = node.getParent();
         Literal featureLiteral = Expressions.literal(featureName);
         if (potentialParentTree.isEmpty()) {

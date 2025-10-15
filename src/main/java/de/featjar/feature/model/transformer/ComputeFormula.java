@@ -26,12 +26,10 @@ import de.featjar.base.computation.Dependency;
 import de.featjar.base.computation.IComputation;
 import de.featjar.base.computation.Progress;
 import de.featjar.base.data.Attribute;
-import de.featjar.base.data.IAttribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.Trees;
 import de.featjar.feature.model.FeatureTree.Group;
-import de.featjar.feature.model.FeatureTree;
 import de.featjar.feature.model.IConstraint;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
@@ -60,15 +58,21 @@ import java.util.Objects;
 import java.util.Queue;
 
 /**
- * Transforms a feature model into a boolean formula.
+ * Transforms a feature model into a boolean formula. Supports a simple way of
+ * transforming cardinality features and a more complicated transformation.
  *
  * @author Sebastian Krieter
+ * @author Klara Surmeier
+ * @author Nermine Mansour
+ * @author Malena Horstmann
  */
 public class ComputeFormula extends AComputation<IFormula> {
     protected static final Dependency<IFeatureModel> FEATURE_MODEL = Dependency.newDependency(IFeatureModel.class);
     protected static final Dependency<Boolean> SIMPLE_TRANSLATION = Dependency.newDependency(Boolean.class);
 
     static Attribute<String> literalNameAttribute = new Attribute<>("literalName", String.class);
+    private Map<IFeature, List<IFeatureTree>> featureToCardinalityNames = new HashMap<>();
+    private Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren = new HashMap<>();
 
     public ComputeFormula(IComputation<IFeatureModel> formula) {
         super(formula, Computations.of(Boolean.FALSE));
@@ -83,58 +87,31 @@ public class ComputeFormula extends AComputation<IFormula> {
         IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
         ArrayList<IFormula> constraints = new ArrayList<>();
         HashSet<Variable> variables = new HashSet<>();
-        
-        Map<IFeature, List<IFeatureTree>> featureToCardinalityNames = new HashMap<>(); 
-        Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren = new HashMap<>();
-        
-        // <<<<<<< HEAD
 
         IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
-
         Collection<IConstraint> crossTreeConstr = featureModel.getConstraints();
-        for (IConstraint constr : crossTreeConstr) {
-        	constraints.add(constr.getFormula());
-        }
-        
         Map<IFeatureTree, List<IConstraint>> localConstraints = findLocalConstraints(crossTreeConstr);
-        
+
+        // if SIMPLE_TRANSLATION is set to true, use ComputeSimpleFormulaVisitor for
+        // simple cardinality translation
         if (SIMPLE_TRANSLATION.get(dependencyList)) {
+
+            // add all cross-tree-constraints to the constraints beforehand. The visitor
+            // will alter the constraints respectively.
+            for (IConstraint constr : crossTreeConstr) {
+                constraints.add(constr.getFormula());
+            }
+
             Trees.traverse(iFeatureTree, new ComputeSimpleFormulaVisitor(constraints, variables));
         } else {
-            traverseFeatureModel(featureModel, constraints, variables, featureToCardinalityNames, featureToChildren);
-            List<IConstraint> transformedConstraints = transformLocalConstraints(localConstraints, featureToCardinalityNames, featureToChildren);
+            traverseFeatureModel(featureModel, constraints, variables);
+            List<IConstraint> transformedConstraints = transformLocalConstraints(localConstraints);
+
+            // add transformed cross-tree-constraints to all constraints
+            for (IConstraint constr : transformedConstraints) {
+                constraints.add(constr.getFormula());
+            }
         }
-        // =======
-        //        Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
-        //
-        //        featureModel.getFeatureTreeStream().forEach(node -> {
-        //            // TODO use better error value
-        //            IFeature feature = node.getFeature();
-        //            String featureName = feature.getName().orElse("");
-        //            Variable variable = new Variable(featureName, feature.getType());
-        //            variables.add(variable);
-        //
-        //            if(node.getAttributes().isPresent()) {
-        //                attributes.put(variable, node.getAttributes().get());
-        //            }
-        //
-        //            // TODO take featureRanges into Account
-        //            Result<IFeatureTree> potentialParentTree = node.getParent();
-        //            Literal featureLiteral = Expressions.literal(featureName);
-        //            if (potentialParentTree.isEmpty()) {
-        //                handleRoot(constraints, featureLiteral, node);
-        //            } else {
-        //                handleParent(constraints, featureLiteral, node);
-        //            }
-        //            handleGroups(constraints, featureLiteral, node);
-        //        });
-        //
-        //        ReplaceAttributeAggregate replaceAttributeAggregate = new ReplaceAttributeAggregate(attributes);
-        //        featureModel.getConstraints().forEach(constraint -> {
-        //            Trees.traverse(constraint.getFormula(), replaceAttributeAggregate);
-        //            constraints.add(constraint.getFormula());
-        //        });
-        // >>>>>>> main_malenq
 
         Reference reference = new Reference(new And(constraints));
         reference.setFreeVariables(variables);
@@ -142,8 +119,7 @@ public class ComputeFormula extends AComputation<IFormula> {
     }
 
     private void traverseFeatureModel(
-            IFeatureModel featureModel, ArrayList<IFormula> constraints, HashSet<Variable> variables, Map<IFeature, List<IFeatureTree>> featureToCardinalityNames, 
-            	Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren ) {
+            IFeatureModel featureModel, ArrayList<IFormula> constraints, HashSet<Variable> variables) {
 
         for (IFeatureTree root : featureModel.getRoots()) {
 
@@ -153,42 +129,40 @@ public class ComputeFormula extends AComputation<IFormula> {
             }
             handleGroups(rootLiteral, root, constraints);
 
-            addChildConstraints(root, constraints, featureToCardinalityNames, featureToChildren);
+            // start with the recursive function to step through the tree
+            addChildConstraints(root, constraints);
         }
     }
 
-    private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints, Map<IFeature, List<IFeatureTree>> featureToCardinalityNames,
-    		Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren ) {
+    private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints) {
 
         Literal parentLiteral = new Literal(getLiteralName(node));
-        
-        
-       // create a new entry for the node in featureToChildren in order to store its children
-//       if (!featureToChildren.containsKey(node)) {
-//    	   featureToChildren.put(node, new HashMap<IFeature, IFeatureTree>());
-//       }
+
+        // create a new entry for the node in featureToChildren in order to store its
+        // children
+        // if (!featureToChildren.containsKey(node)) {
+        // featureToChildren.put(node, new HashMap<IFeature, IFeatureTree>());
+        // }
         featureToChildren.computeIfAbsent(node, k -> new HashMap<>());
 
-
         for (IFeatureTree child : node.getChildren()) {
-        	
+
             if (isCardinalityFeature(child)) {
-            	
-            	int upperBound = child.getFeatureCardinalityUpperBound();
+
+                int upperBound = child.getFeatureCardinalityUpperBound();
                 int lowerBound = child.getFeatureCardinalityLowerBound();
-                
-                List<IFeatureTree> children = (List<IFeatureTree>) node.getChildren();
+
+                // List<IFeatureTree> children = (List<IFeatureTree>) node.getChildren();
 
                 LinkedList<Literal> constraintGroupLiterals = new LinkedList<Literal>();
-                
-                
+
                 // add an entry for the current cardinality feature to featureToCardinalityNames
-//                if (!featureToCardinalityNames.containsKey(child.getFeature())) {
-//             	   featureToCardinalityNames.put(child.getFeature(), new ArrayList<IFeatureTree>());
-//                }
-                List<IFeatureTree> cardinalityInstances = featureToCardinalityNames.computeIfAbsent(
-                		child.getFeature(), k -> new ArrayList<>());
-                
+                // if (!featureToCardinalityNames.containsKey(child.getFeature())) {
+                // featureToCardinalityNames.put(child.getFeature(), new
+                // ArrayList<IFeatureTree>());
+                // }
+                List<IFeatureTree> cardinalityInstances =
+                        featureToCardinalityNames.computeIfAbsent(child.getFeature(), k -> new ArrayList<>());
 
                 for (int i = 1; i <= upperBound; i++) {
 
@@ -196,32 +170,30 @@ public class ComputeFormula extends AComputation<IFormula> {
                     if (cardinalityFeatureAbove(child)) {
                         literalName += "." + getLiteralName(node);
                     }
-                    
+
                     // clone only tree for traversal, not its children
                     IFeatureTree cardinalityClone = child.cloneTree();
                     cardinalityClone.mutate().setAttributeValue(literalNameAttribute, literalName);
 
                     Literal currentLiteral = new Literal(literalName);
-                    
-                    
+
                     // add the children to their parent in featureToChildren
-//                    if (featureToChildren.containsKey(node)) {
-//                    	featureToChildren.get(node).put(child.getFeature(), cardinalityClone);
-//                    }
-                    Map<IFeature, List<IFeatureTree>> childrenOfNode = featureToChildren.computeIfAbsent(
-                    		node, k -> new HashMap<>());
-                    List<IFeatureTree> childInstances = childrenOfNode.computeIfAbsent(
-                    		child.getFeature(), k -> new ArrayList<>());
+                    // if (featureToChildren.containsKey(node)) {
+                    // featureToChildren.get(node).put(child.getFeature(), cardinalityClone);
+                    // }
+                    Map<IFeature, List<IFeatureTree>> childrenOfNode =
+                            featureToChildren.computeIfAbsent(node, k -> new HashMap<>());
+                    List<IFeatureTree> childInstances =
+                            childrenOfNode.computeIfAbsent(child.getFeature(), k -> new ArrayList<>());
                     childInstances.add(cardinalityClone);
-                    
+
                     // and map them to the feature name without cardinality
                     cardinalityInstances.add(cardinalityClone);
-                    
-                    
+
                     // add all the constraints
                     // imply parent
                     constraints.add(new Implies(currentLiteral, parentLiteral));
-                    // implication chain part
+                    // implication chain to force selection order for multiple of same feature
                     if (i > 1) {
                         Literal previousLiteral = constraintGroupLiterals.getLast();
                         constraints.add(new Implies(currentLiteral, previousLiteral));
@@ -231,15 +203,16 @@ public class ComputeFormula extends AComputation<IFormula> {
 
                     constraintGroupLiterals.add(currentLiteral);
 
-                    addChildConstraints(cardinalityClone, constraints, featureToCardinalityNames, featureToChildren);
-                    
+                    // recursive call
+                    addChildConstraints(cardinalityClone, constraints);
                 }
-       
+
                 // check if 0 and do not add implication
                 if (lowerBound != 0)
                     constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, constraintGroupLiterals)));
 
             } else {
+                // handling of features that do not have a cardinality
 
                 String literalName = getLiteralName(child);
                 if (cardinalityFeatureAbove(child)) {
@@ -248,19 +221,17 @@ public class ComputeFormula extends AComputation<IFormula> {
 
                 Literal childFeatureLiteral = new Literal(literalName);
                 child.mutate().setAttributeValue(literalNameAttribute, literalName);
-                
-                
+
                 // add the children to their parent in featureToChildren
-//                if (featureToChildren.containsKey(node)) {
-//                	featureToChildren.get(node).put(child.getFeature(), child);
-//                }
-                Map<IFeature, List<IFeatureTree>> childrenOfNode = featureToChildren.computeIfAbsent(
-                		node, k -> new HashMap<>());
-                List<IFeatureTree> childInstances = childrenOfNode.computeIfAbsent(
-                		child.getFeature(), k -> new ArrayList<>());
-                childInstances.add(child); 
-                
-                
+                // if (featureToChildren.containsKey(node)) {
+                // featureToChildren.get(node).put(child.getFeature(), child);
+                // }
+                Map<IFeature, List<IFeatureTree>> childrenOfNode =
+                        featureToChildren.computeIfAbsent(node, k -> new HashMap<>());
+                List<IFeatureTree> childInstances =
+                        childrenOfNode.computeIfAbsent(child.getFeature(), k -> new ArrayList<>());
+                childInstances.add(child);
+
                 // add constraints
                 // always add parent implications (child implies parent)
                 constraints.add(new Implies(childFeatureLiteral, parentLiteral));
@@ -268,14 +239,18 @@ public class ComputeFormula extends AComputation<IFormula> {
                 // handle group
                 handleGroups(childFeatureLiteral, child, constraints);
 
-                addChildConstraints(child, constraints, featureToCardinalityNames, featureToChildren);
+                // recursive call
+                addChildConstraints(child, constraints);
             }
-            
         }
     }
 
-    
+    /**
+     * gets the literal name. Normally a literalName equals the feature name. For
+     * cardinality features and its children, pseudo-literals are needed
+     */
     private String getLiteralName(IFeatureTree node) {
+
         String literalName = "";
         if (node.getAttributeValue(literalNameAttribute).isEmpty()) {
             literalName = node.getFeature().getName().orElse("");
@@ -357,20 +332,20 @@ public class ComputeFormula extends AComputation<IFormula> {
             }
         }
     }
-    
+
     private IFeatureTree getNextCardinalityParent(IFeatureTree node) {
 
         if (!node.getParent().isPresent() && !isCardinalityFeature(node)) return null;
-        
+
         if (isCardinalityFeature(node)) {
-        	return node;
+            return node;
         } else if (isCardinalityFeature(node.getParent().get())) {
-        	return node.getParent().get();
+            return node.getParent().get();
         } else {
             return getNextCardinalityParent(node.getParent().get());
         }
     }
-    
+
     private ArrayList<IFormula> getConstraints(IFeatureTree node, ArrayList<IFormula> constraints) {
         ArrayList<IFormula> matchingConstraints = new ArrayList<IFormula>();
         for (IFormula constraint : constraints) {
@@ -383,54 +358,55 @@ public class ComputeFormula extends AComputation<IFormula> {
         }
         return matchingConstraints;
     }
-    
+
     private IFeatureTree getCommonCardinalityParent(IConstraint constraint) {
-    	
-    	// identify the contained features 
-    	LinkedHashSet<IFeature> features = constraint.getReferencedFeatures();
-    		
-    	// find the first ancestor with cardinality for each feature 
-    	Iterator<IFeature> iterator = features.iterator();
-    	
-    	IFeatureTree referenceParent = getNextCardinalityParent(iterator.next().getFeatureTree().get());
-    	
-    	while (iterator.hasNext()) {
-            IFeatureTree currentCardinalityParent = getNextCardinalityParent(iterator.next().getFeatureTree().get());
+
+        // identify the contained features
+        LinkedHashSet<IFeature> features = constraint.getReferencedFeatures();
+
+        // find the first ancestor with cardinality for each feature
+        Iterator<IFeature> iterator = features.iterator();
+
+        IFeatureTree referenceParent =
+                getNextCardinalityParent(iterator.next().getFeatureTree().get());
+
+        while (iterator.hasNext()) {
+            IFeatureTree currentCardinalityParent =
+                    getNextCardinalityParent(iterator.next().getFeatureTree().get());
 
             // no common cardinality parent if two features do not have the same parent
             if (!Objects.equals(referenceParent, currentCardinalityParent)) {
                 return null;
             }
         }
-    		
-    	return referenceParent;
+
+        return referenceParent;
     }
-    
+
     private Map<IFeatureTree, List<IConstraint>> findLocalConstraints(Collection<IConstraint> constraints) {
-    	Map<IFeatureTree, List<IConstraint>> localConstraints = new HashMap<>();
-    	
-    	for (IConstraint constraint : constraints) {
-    		IFeatureTree commonCardinalityParent = getCommonCardinalityParent(constraint);
-    		if (commonCardinalityParent != null) {
-    			if (!localConstraints.containsKey(commonCardinalityParent)) {
+        Map<IFeatureTree, List<IConstraint>> localConstraints = new HashMap<>();
+
+        for (IConstraint constraint : constraints) {
+            IFeatureTree commonCardinalityParent = getCommonCardinalityParent(constraint);
+            if (commonCardinalityParent != null) {
+                if (!localConstraints.containsKey(commonCardinalityParent)) {
                     localConstraints.put(commonCardinalityParent, new ArrayList<>());
                 }
-               
+
                 localConstraints.get(commonCardinalityParent).add(constraint);
-    		}
-    	}
-    	
-    	return localConstraints;
+            }
+        }
+
+        return localConstraints;
     }
-    
-    private List<IFeatureTree> findContextualFeatureNames(IFeatureTree contextFeature, IFeature targetFeature, 
-    		Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren) {
-    	
-    	List<IFeatureTree> contextualFeatureNames = new ArrayList<>();
-    	
-    	Queue<IFeatureTree> nodesToVisit = new LinkedList<>();
+
+    private List<IFeatureTree> findContextualFeatureNames(IFeatureTree contextFeature, IFeature targetFeature) {
+
+        List<IFeatureTree> contextualFeatureNames = new ArrayList<>();
+
+        Queue<IFeatureTree> nodesToVisit = new LinkedList<>();
         nodesToVisit.add(contextFeature);
-        
+
         while (!nodesToVisit.isEmpty()) {
             IFeatureTree currentNode = nodesToVisit.poll();
 
@@ -444,66 +420,71 @@ public class ComputeFormula extends AComputation<IFormula> {
                 List<IFeatureTree> childInstances = entry.getValue();
 
                 for (IFeatureTree childInstance : childInstances) {
-          
+
                     if (originalChildFeature.equals(targetFeature)) {
                         contextualFeatureNames.add(childInstance);
                     }
-                 
+
                     nodesToVisit.add(childInstance);
                 }
             }
         }
 
         return contextualFeatureNames;
-    
     }
-    
+
     private IFormula createOrFromFeatureTrees(List<IFeatureTree> featureTrees) {
-    	List<Literal> featureLiterals = new ArrayList<>();
-    	
-    	for (IFeatureTree featureTree : featureTrees) {
-    		String literalName = featureTree.getAttributeValue(literalNameAttribute).orElse("");;
-    		Literal featureLiteral = new Literal(literalName);
-    		featureLiterals.add(featureLiteral);
-    	}
-    	
-    	return new Or(featureLiterals);
+
+        List<Literal> featureLiterals = new ArrayList<>();
+
+        for (IFeatureTree featureTree : featureTrees) {
+            String literalName =
+                    featureTree.getAttributeValue(literalNameAttribute).orElse("");
+            ;
+            Literal featureLiteral = new Literal(literalName);
+            featureLiterals.add(featureLiteral);
+        }
+
+        return new Or(featureLiterals);
     }
-    
-    private List<IConstraint> transformLocalConstraints(Map<IFeatureTree, List<IConstraint>> localConstraints, 
-    		Map<IFeature, List<IFeatureTree>> featureToCardinalityNames, Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren) {
-    	List<IConstraint> finalConstraints = new ArrayList<>();
-    	
-    	for (Map.Entry<IFeatureTree, List<IConstraint>> entry : localConstraints.entrySet()) {
-    		IFeatureTree contextOriginalFeature = entry.getKey();
-    		List<IConstraint> constraints = entry.getValue();
-    		
-    		List<IFeatureTree> contextFeatureNames = featureToCardinalityNames.get(contextOriginalFeature.getFeature());
-    		
-    	    
-    		for (IConstraint constraint : constraints) {
-    			for (IFeatureTree contextFeatureName : contextFeatureNames) {
-    				IConstraint modifiedConstraint = constraint.clone();
-    				LinkedHashSet<IFeature> features = constraint.getReferencedFeatures();
-    			
-    				for (IFeature feature : features) {
-    					List<IFeatureTree> contextualFeatureNames = findContextualFeatureNames(contextFeatureName, feature, featureToChildren);
-    					IFormula replacement = createOrFromFeatureTrees(contextualFeatureNames);
-    					modifiedConstraint.getFormula().replaceChild(new Literal(feature.getName().get()), replacement);
-    				}
-    				
-    				IFormula formula = modifiedConstraint.getFormula();
-    				IFormula contextFormula = new Implies(new Literal(contextFeatureName.getAttributeValue(literalNameAttribute).orElse("")), formula);
-    				modifiedConstraint.mutate().setFormula(contextFormula);
-    				
-    				finalConstraints.add(modifiedConstraint);
-    			}
-    		}
-       }
-    	
-      return finalConstraints;
-   }
-    
+
+    private List<IConstraint> transformLocalConstraints(Map<IFeatureTree, List<IConstraint>> localConstraints) {
+
+        List<IConstraint> finalConstraints = new ArrayList<>();
+
+        for (Map.Entry<IFeatureTree, List<IConstraint>> entry : localConstraints.entrySet()) {
+            IFeatureTree contextOriginalFeature = entry.getKey();
+            List<IConstraint> constraints = entry.getValue();
+
+            List<IFeatureTree> contextFeatureNames = featureToCardinalityNames.get(contextOriginalFeature.getFeature());
+
+            for (IConstraint constraint : constraints) {
+                for (IFeatureTree contextFeatureName : contextFeatureNames) {
+                    IConstraint modifiedConstraint = constraint.clone();
+                    LinkedHashSet<IFeature> features = constraint.getReferencedFeatures();
+
+                    for (IFeature feature : features) {
+                        List<IFeatureTree> contextualFeatureNames =
+                                findContextualFeatureNames(contextFeatureName, feature);
+                        IFormula replacement = createOrFromFeatureTrees(contextualFeatureNames);
+                        modifiedConstraint
+                                .getFormula()
+                                .replaceChild(new Literal(feature.getName().get()), replacement);
+                    }
+
+                    IFormula formula = modifiedConstraint.getFormula();
+                    IFormula contextFormula = new Implies(
+                            new Literal(contextFeatureName
+                                    .getAttributeValue(literalNameAttribute)
+                                    .orElse("")),
+                            formula);
+                    modifiedConstraint.mutate().setFormula(contextFormula);
+
+                    finalConstraints.add(modifiedConstraint);
+                }
+            }
+        }
+
+        return finalConstraints;
+    }
 }
-
-

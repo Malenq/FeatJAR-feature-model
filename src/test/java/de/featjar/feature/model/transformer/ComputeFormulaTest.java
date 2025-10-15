@@ -42,6 +42,17 @@ import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ *
+ * Test class for the variations of ComputeFormula. The simple translation of
+ * cardinality features as well as the more complicated version is tested here.
+ * Additionally the combination of attribute aggregates and feature
+ * cardinalities (unsupported).
+ *
+ * @author Klara Surmeier
+ * @author Nermine Mansour
+ * @author Malena Horstmann
+ */
 class ComputeFormulaTest {
     private IFeatureModel featureModel;
     private IFormula expected;
