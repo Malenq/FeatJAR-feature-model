@@ -360,10 +360,12 @@ public class ComputeFormula extends AComputation<IFormula> {
     
     private IFeatureTree getNextCardinalityParent(IFeatureTree node) {
 
-        if (!node.getParent().isPresent()) return null;
-
-        if (isCardinalityFeature(node.getParent().get())) {
-            return node.getParent().get();
+        if (!node.getParent().isPresent() && !isCardinalityFeature(node)) return null;
+        
+        if (isCardinalityFeature(node)) {
+        	return node;
+        } else if (isCardinalityFeature(node.getParent().get())) {
+        	return node.getParent().get();
         } else {
             return getNextCardinalityParent(node.getParent().get());
         }
