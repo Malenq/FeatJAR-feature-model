@@ -102,18 +102,18 @@
             \path (!c1.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!cl.parent) coordinate (C) pic[draw=drawColor, angle radius=\angleSize]{angle};
         }
     },
-    groupcardinality/.style 2 args={
+    groupcardinality/.style n args={4}{
         tikz+={
-            \path (!c1.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!cl.parent) coordinate (C) pic[
-                draw=drawColor,
-                angle radius=\angleSizeCardinalityGroup,
-                pic text={#1,#2},
-                pic text options={
-                    scale=0.6,
-                    fill=white,
-                    inner sep=0.5pt
-                }
-            ]{angle}
+			\path (!{current, n=#1}.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!{current, n=#2}.parent) coordinate (C) pic[
+			draw=drawColor,
+			angle radius=7em,
+			pic text={#3,#4},
+			pic text options={
+				scale=0.6,
+				fill=white,
+				inner sep=0.5pt
+			}
+			]{angle}
         }
     },
     /tikz/placeholder/.style={
@@ -144,15 +144,21 @@
 	featureDiagram
 	[\multicolumn{2}{c}{Hello} \\\hline
 \small\texttt{name (String)} &\small\texttt{= Hello} \\
-,align=ll,abstract,optional[\multicolumn{2}{c}{Feature} \\\hline
+,align=ll,abstract[\multicolumn{2}{c}{Feature} \\\hline
 \small\texttt{name (String)} &\small\texttt{= Feature} \\
-,align=ll,concrete,mandatory,or[\multicolumn{2}{c}{Wonderful} \\\hline
-\small\texttt{name (String)} &\small\texttt{= Wonderful} \\
-,align=ll,concrete,optional][\multicolumn{2}{c}{Beautiful} \\\hline
-\small\texttt{name (String)} &\small\texttt{= Beautiful} \\
-,align=ll,concrete,optional]][\multicolumn{2}{c}{World} \\\hline
-\small\texttt{name (String)} &\small\texttt{= World} \\
-,align=ll,concrete,optional]]	
+,align=ll,abstract,featurecardinality={0}{2},alternative={1}{2},or={3}{2}[\multicolumn{2}{c}{Wonderful1} \\\hline
+\small\texttt{name (String)} &\small\texttt{= Wonderful1} \\
+,align=ll,concrete][\multicolumn{2}{c}{Beautiful1} \\\hline
+\small\texttt{name (String)} &\small\texttt{= Beautiful1} \\
+,align=ll,concrete][\multicolumn{2}{c}{Wonderful2} \\\hline
+\small\texttt{name (String)} &\small\texttt{= Wonderful2} \\
+,align=ll,concrete][\multicolumn{2}{c}{Beautiful2} \\\hline
+\small\texttt{name (String)} &\small\texttt{= Beautiful2} \\
+,align=ll,concrete]][\multicolumn{2}{c}{World1} \\\hline
+\small\texttt{name (String)} &\small\texttt{= World1} \\
+,align=ll,concrete,optional][\multicolumn{2}{c}{World2} \\\hline
+\small\texttt{name (String)} &\small\texttt{= World2} \\
+,align=ll,concrete,mandatory]]	
 	\matrix [anchor=north west] at (current bounding box.north east) {
 		\node [placeholder] {}; \\
 	};
@@ -167,6 +173,10 @@
 			\draw[drawColor] (0.1,0) -- +(0.2,-0.4);
 			\fill[drawColor] (0,-0.2) arc (240:300:0.2);
 		\node [label=right:Or Group] {}; \\
+			\draw[drawColor] (0.1,0) -- +(-0.2, -0.4);
+			\draw[drawColor] (0.1,0) -- +(0.2,-0.4);
+			\draw[drawColor] (0,-0.2) arc (240:300:0.2);
+		\node [label=right:Alternative Group] {}; \\
 	};
 	\matrix [below=1mm of current bounding box] {
 	\node {\( \text{A} \land \text{B} \)}; \\

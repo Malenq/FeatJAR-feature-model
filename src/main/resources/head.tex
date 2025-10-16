@@ -101,18 +101,18 @@
             \path (!c1.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!cl.parent) coordinate (C) pic[draw=drawColor, angle radius=\angleSize]{angle};
         }
     },
-    groupcardinality/.style 2 args={
+    groupcardinality/.style n args={4}{
         tikz+={
-            \path (!c1.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!cl.parent) coordinate (C) pic[
-                draw=drawColor,
-                angle radius=\angleSizeCardinalityGroup,
-                pic text={#1,#2},
-                pic text options={
-                    scale=0.6,
-                    fill=white,
-                    inner sep=0.5pt
-                }
-            ]{angle}
+			\path (!{current, n=#1}.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!{current, n=#2}.parent) coordinate (C) pic[
+			draw=drawColor,
+			angle radius=7em,
+			pic text={#3,#4},
+			pic text options={
+				scale=0.6,
+				fill=white,
+				inner sep=0.5pt
+			}
+			]{angle}
         }
     },
     /tikz/placeholder/.style={
