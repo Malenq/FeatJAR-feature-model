@@ -224,14 +224,11 @@ class ComputeFormulaTest {
 				new Implies(new Literal("D_2"), new Literal("D_1")),
 
 				// build constraints out of cross-tree-constraints
-				new Implies(new Literal("A_1"),
-						new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_1"))),
-				new Implies(new Literal("A_2"),
-						new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_2"))),
-				new Implies(new Literal("D_1"),
-						new And(new Literal("D_1"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
-				new Implies(new Literal("D_2"),
-						new And(new Literal("D_2"), new Or(new Literal("C.A_1"), new Literal("C.A_2"))))));
+				new Implies(new Literal("D_1"), new And(new Literal("D_1"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
+				new Implies(new Literal("D_2"), new And(new Literal("D_2"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
+				new Implies(new Literal("A_1"), new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_1"))),
+				new Implies(new Literal("A_2"), new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_2")))
+				));
 
 		executeTest();
 	}
