@@ -7,7 +7,9 @@ import java.util.Set;
 import de.featjar.feature.model.IFeatureTree;
 
 
-
+/**
+ * 
+ */
 public class CustomObj {
 	private final Set<IFeatureTree> contextFeatures;
 

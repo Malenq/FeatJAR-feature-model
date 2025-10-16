@@ -31,6 +31,7 @@ import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.connective.And;
+import de.featjar.formula.structure.connective.AtLeast;
 import de.featjar.formula.structure.connective.Between;
 import de.featjar.formula.structure.connective.Choose;
 import de.featjar.formula.structure.connective.Implies;
@@ -643,8 +644,9 @@ class ComputeFormulaTest {
 
         executeTest();
     }
+    
     @Test
-    void GlobalConstraintsWithOneContext() {
+    void globalConstraintsWithOneContext() {
         IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
         rootTree.mutate().makeMandatory();
@@ -675,7 +677,46 @@ class ComputeFormulaTest {
         executeTest();
         
     }
+
+    @Test
+    void globalConstraintsWithNestedContexts() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
         
+        // feature A with cardinality [0,...,2] is a child of root
+        IFeature featureA = featureModel.mutate().addFeature("A");
+        IFeatureTree treeA = rootTree.mutate().addFeatureBelow(featureA);
+        treeA.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        // feature B with cardinality [0,...,2] is a child of A
+        IFeature featureB = featureModel.mutate().addFeature("B");
+        IFeatureTree treeB = treeA.mutate().addFeatureBelow(featureB);
+        treeB.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        // cross-tree constraints
+        featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("B")));
+        
+//        expected = new Reference(new And(
+//        		new Literal("root"),
+//        		new Implies(new Literal("A_1"), new Literal("root")),
+//        		new Implies(new Literal("B_1.A_1"), new Literal("A_1")),
+//        		new Implies(new Literal("B_2.A_1"), new Literal("A_1")),
+//        		new Implies(new Literal("B_2.A_1"), new Literal("B_1.A_1")),
+//        		new Implies(new Literal("A_2"), new Literal("root")),
+//        		new Implies(new Literal("A_2"), new Literal("A_1")),
+//				new Implies(new Literal("B_1.A_2"), new Literal("A_2")),
+//				new Implies(new Literal("B_2.A_2"), new Literal("A_2")),
+//				new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2")),
+//				new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2")),
+//				)
+//        		
+        
+        executeTest();
+       
+    }
+
     private void executeTest() {
 
         ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);

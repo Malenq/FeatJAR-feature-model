@@ -523,6 +523,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                          				// 2. + 3. case: feature's context is independent from current context
                          			    replacement = createOrReplacementWithoutContext(feature);
                          			}
+                         	    // feature is the current context feature
                          		} else {
                          		    List<IFeatureTree> contextualFeatureName = findContextualFeatureNames(contextFeatureName, feature);
                          		    if (contextualFeatureName != null && !contextualFeatureName.isEmpty()) {
@@ -601,7 +602,7 @@ public class ComputeFormula extends AComputation<IFormula> {
     private boolean contextUnderCurrentContext(IFeatureTree currentContext, IFeatureTree context) {
         IFeatureTree node = context;
         while (node != null) {
-            if (node == currentContext) return true;  // found ancestor
+            if (node.getFeature().getName().get().equals(currentContext.getFeature().getName().get())) return true;  
             node = node.getParent().isPresent() ? getNextCardinalityParent(node.getParent().get()) : null;
         }
         return false;
