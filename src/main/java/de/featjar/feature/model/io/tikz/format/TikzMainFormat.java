@@ -90,7 +90,7 @@ public class TikzMainFormat {
                     .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
                     .writeDraw("(0.1,0) -- +(0.2,-0.4)")
                     .writeDraw("(0,-0.2) arc (240:300:0.2)")
-                    .writeNode("[alternative,label=right:Alternative Group] {}");
+                    .writeNode("[label=right:Alternative Group] {}");
         }
 
         stringBuilder.append(matrixHelper.build());
