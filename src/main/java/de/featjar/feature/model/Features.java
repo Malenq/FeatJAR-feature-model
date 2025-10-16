@@ -1,6 +1,5 @@
 package de.featjar.feature.model;
 
-import de.featjar.base.FeatJAR;
 import de.featjar.formula.structure.Expressions;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.predicate.NotEquals;
@@ -21,8 +20,7 @@ public class Features {
         } else if(feature.getType().equals(Float.class)) {
             return new NotEquals(new Variable(featureName, feature.getType()), new Constant(0.0f));
         } else {
-            FeatJAR.log().warning("Could not handle type "+ feature.getType());
-            return null;
+            throw new UnsupportedOperationException("Unsupported feature type: " + feature.getType());
         }
     }
 }
