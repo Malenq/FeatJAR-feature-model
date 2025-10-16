@@ -1,10 +1,13 @@
 package de.featjar.feature.model.io.tikz.helper;
 
+import de.featjar.base.FeatJAR;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.visitor.ITreeVisitor;
+import de.featjar.feature.model.FeatureTree;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This class travers a given {@link IFeatureTree} and generates the Tikz representation of the tree.
@@ -25,16 +28,25 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
     public TraversalAction firstVisit(List<IFeatureTree> path) {
         IFeature feature = ITreeVisitor.getCurrentNode(path).getFeature();
 
-        //new AttributeHelper(stringBuilder/*, Arrays.asList("abstract", "name")*/)
-        //        .writeAttributes(feature);
-        //stringBuilder.append("[");
-        //insertAttributes(feature);
         new AttributeHelper(feature, stringBuilder)
                 .addFilterValue("name")
                 .setFilterType(AttributeHelper.FilterType.DISPLAY)
                 .build();
         insertNodeHead(feature);
+        handleGroups(feature);
         return TraversalAction.CONTINUE;
+    }
+
+    private void handleGroups(IFeature feature) {
+        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
+        if (featureTree == null) {
+            return;
+        }
+
+        featureTree.getChildren().forEach(featureStream -> {
+           FeatJAR.log().info(feature.getName().get() + " - " + featureStream.getFeature().getName().get());
+        });
+
     }
 
     @Override
@@ -49,6 +61,9 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
     }
 
     private void insertNodeHead(IFeature feature) {
+        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
+        FeatureTree.Group featureTreeParentGroup = feature.getFeatureTree().get().getParentGroup().orElse(null);
+
         if (feature.isAbstract()) {
             stringBuilder.append(",abstract");
         }
@@ -57,43 +72,41 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
             stringBuilder.append(",concrete");
         }
 
-        if(feature.getFeatureTree().isPresent()) {
-            if (feature.getFeatureTree().get().getFeatureCardinalityUpperBound() > 1) {
+        if (isNotRootFeature(feature) && featureTreeParentGroup != null && featureTreeParentGroup.isAnd()) {
+            if (featureTree.getFeatureCardinalityLowerBound() == 0 &&
+                    featureTree.getFeatureCardinalityUpperBound() == 1) {
+                stringBuilder.append(",optional");
+            } else if(featureTree.getFeatureCardinalityLowerBound() == 1 &&
+                    featureTree.getFeatureCardinalityUpperBound() == 1) {
+                stringBuilder.append(",mandatory");
+            } else {
                 stringBuilder.append(String.format(",featurecardinality={%d}{%d}",
                         feature.getFeatureTree().get().getFeatureCardinalityLowerBound(),
                         feature.getFeatureTree().get().getFeatureCardinalityUpperBound()));
             }
+        }
 
-            if (feature.getFeatureTree().get().isMandatory()) {
-                stringBuilder.append(",mandatory");
-            } else {
-                stringBuilder.append(",optional");
+        if (isNotRootFeature(feature)) {
+            int previousChildrenCount = 0;
+            for(int i = 0; i < featureTree.getChildrenGroups().size(); i++) {
+                if(featureTree.getChildrenGroup(i).isPresent()) {
+                    FeatureTree.Group group = featureTree.getChildrenGroup(i).get();
+
+                    if(group.isOr()) {
+                        stringBuilder.append(String.format(",or={%d}{%d}", previousChildrenCount + 1,
+                                featureTree.getChildren(i).size()));
+                    } else if(group.isAlternative()) {
+                        stringBuilder.append(String.format(",alternative={%d}{%d}", previousChildrenCount + 1,
+                                featureTree.getChildren(i).size()));
+                    } else if(group.isCardinalityGroup()) {
+                        stringBuilder.append(String.format(",groupcardinality={%d}{%d}", previousChildrenCount + 1,
+                                featureTree.getChildren(i).size()));
+                    }
+
+                    previousChildrenCount += featureTree.getChildren(i).size();
+                }
             }
         }
-
-        if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
-            IFeatureTree featureTree = feature.getFeatureTree().get();
-            if (featureTree.getParentGroup().isPresent() &&
-                    featureTree.getParentGroup().get().isOr() && hasMoreChildrens(feature)) {
-                stringBuilder.append(",or");
-            }
-        }
-        if (isNotRootFeature(feature) && feature.getFeatureTree().isPresent()) {
-            IFeatureTree featureTree = feature.getFeatureTree().get();
-            if (featureTree.getParentGroup().isPresent() &&
-                    featureTree.getParentGroup().get().isAlternative() && hasMoreChildrens(feature)) {
-                stringBuilder.append(",alternative");
-            }
-        }
-    }
-
-    private boolean hasMoreChildrens(IFeature feature) {
-        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
-        if (featureTree == null) {
-            return false;
-        }
-
-        return featureTree.getChildren().size() >= 2;
     }
 
     private boolean isNotRootFeature(IFeature feature) {
