@@ -224,11 +224,18 @@ class ComputeFormulaTest {
 				new Implies(new Literal("D_2"), new Literal("D_1")),
 
 				// build constraints out of cross-tree-constraints
-				new Implies(new Literal("D_1"), new And(new Literal("D_1"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
-				new Implies(new Literal("D_2"), new And(new Literal("D_2"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
-				new Implies(new Literal("A_1"), new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_1"))),
-				new Implies(new Literal("A_2"), new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_2")))
-				));
+				new Implies(new Literal("D_1"),
+						new And(new Literal("D_1"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
+				new Implies(new Literal("D_2"),
+						new And(new Literal("D_2"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
+				new Implies(new Literal("A_1"),
+						new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_1"))),
+				new Implies(new Literal("A_2"),
+						new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_2"))),
+
+				// for global cross tree constraint include everything in one big one
+				new And(new Or(new Literal("D_1"), new Literal("D_2")),
+						new Or(new Literal("C.A_1"), new Literal("C.A_2")))));
 
 		executeTest();
 	}
@@ -611,8 +618,7 @@ class ComputeFormulaTest {
 
 		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("root")),
-				new Implies(new Literal("A_2"), new Literal("A_1")),
-				new Implies(new Literal("F"), new Literal("root")),
+				new Implies(new Literal("A_2"), new Literal("A_1")), new Implies(new Literal("F"), new Literal("root")),
 				new Implies(new Literal("A_1"), new Implies(new Literal("F"), new Literal("A_1"))),
 				new Implies(new Literal("A_2"), new Implies(new Literal("F"), new Literal("A_2")))));
 
@@ -639,28 +645,31 @@ class ComputeFormulaTest {
 		// cross-tree constraints
 		featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("B")));
 
-        expected = new Reference(new And(
-        		new Literal("root"),
-        		new Implies(new Literal("A_1"), new Literal("root")),
-        		new Implies(new Literal("B_1.A_1"), new Literal("A_1")),
-        		new Implies(new Literal("B_2.A_1"), new Literal("A_1")),
-        		new Implies(new Literal("B_2.A_1"), new Literal("B_1.A_1")),
-        		new Implies(new Literal("A_2"), new Literal("root")),
-        		new Implies(new Literal("A_2"), new Literal("A_1")),
+		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
+				new Implies(new Literal("B_1.A_1"), new Literal("A_1")),
+				new Implies(new Literal("B_2.A_1"), new Literal("A_1")),
+				new Implies(new Literal("B_2.A_1"), new Literal("B_1.A_1")),
+				new Implies(new Literal("A_2"), new Literal("root")),
+				new Implies(new Literal("A_2"), new Literal("A_1")),
 				new Implies(new Literal("B_1.A_2"), new Literal("A_2")),
 				new Implies(new Literal("B_2.A_2"), new Literal("A_2")),
 				new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2")),
-				
-				new Implies( new Literal("A_1"), new Implies( new Literal("A_1"), new Or(new Literal("B_1.A_1"), new Literal("B_2.A_1")))),
-				new Implies( new Literal("A_2"), new Implies( new Literal("A_2"), new Or(new Literal("B_1.A_2"), new Literal("B_2.A_2")))),
-				
-				new Implies( new Literal("B_1.A_1"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_1.A_1"))),
-				new Implies( new Literal("B_2.A_1"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_2.A_1"))),
-				new Implies( new Literal("B_1.A_2"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_1.A_2"))),
-				new Implies( new Literal("B_2.A_2"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_2.A_2")))
-				
-				));
-        		
+
+				new Implies(new Literal("A_1"),
+						new Implies(new Literal("A_1"), new Or(new Literal("B_1.A_1"), new Literal("B_2.A_1")))),
+				new Implies(new Literal("A_2"),
+						new Implies(new Literal("A_2"), new Or(new Literal("B_1.A_2"), new Literal("B_2.A_2")))),
+
+				new Implies(new Literal("B_1.A_1"),
+						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("B_1.A_1"))),
+				new Implies(new Literal("B_2.A_1"),
+						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("B_2.A_1"))),
+				new Implies(new Literal("B_1.A_2"),
+						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("B_1.A_2"))),
+				new Implies(new Literal("B_2.A_2"),
+						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("B_2.A_2")))
+
+		));
 
 		executeTest();
 
