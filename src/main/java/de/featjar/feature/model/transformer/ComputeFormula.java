@@ -334,15 +334,15 @@ public class ComputeFormula extends AComputation<IFormula> {
                             constraints.add(new Implies(
                                     featureLiteral, new Between(lowerBound, upperBound, groupLiterals.get(i))));
                         } else {
-                            constraints.add(new Implies(featureLiteral, new AtMost(upperBound, groupLiterals.get(i))));
+                        	constraints.add(new Implies(featureLiteral, new AtMost(upperBound, groupLiterals.get(i))));
                         }
                     } else {
                         if (upperBound != Range.OPEN) {
                             constraints.add(new Implies(featureLiteral, new AtLeast(lowerBound, groupLiterals.get(i))));
                         }
-                    }
                 }
-            }
+                }}
+            
         }
     }
 
@@ -468,18 +468,22 @@ public class ComputeFormula extends AComputation<IFormula> {
     }
     
     private IFormula createOrReplacementWithContext(IFeatureTree currentContext, IFeature feature) {
-    	List<IFeatureTree> contextualFeatureNames = findContextualFeatureNames(currentContext, feature);
-    	IFormula contextualOrReplacement = createOrFromFeatureTrees(contextualFeatureNames);
-    	
-    	return contextualOrReplacement;
+        List<IFeatureTree> contextualFeatureNames = findContextualFeatureNames(currentContext, feature);
+        if (contextualFeatureNames == null || contextualFeatureNames.isEmpty()) {
+            return new Literal(feature.getName().orElse("")); // fallback to plain feature
+        }
+        return createOrFromFeatureTrees(contextualFeatureNames);
     }
+
     
     private IFormula createOrReplacementWithoutContext(IFeature feature) {
-    	List<IFeatureTree> featureNames = featureToCardinalityNames.get(feature);
-    	IFormula orReplacement = createOrFromFeatureTrees(featureNames);
-    	
-    	return orReplacement;
+        List<IFeatureTree> featureNames = featureToCardinalityNames.get(feature);
+        if (featureNames == null || featureNames.isEmpty()) {
+            return new Literal(feature.getName().orElse("")); // fallback
+        }
+        return createOrFromFeatureTrees(featureNames);
     }
+
     
     private List<IConstraint> transformLocalConstraints(Map<CustomObj, List<IConstraint>> localConstraints) {
 
@@ -499,6 +503,7 @@ public class ComputeFormula extends AComputation<IFormula> {
             	 List<IFeatureTree> contextFeatureNames = featureToCardinalityNames.get(context.getFeature());
 
                  for (IConstraint constraint : constraints) {
+                	 if (contextFeatureNames == null || contextFeatureNames.isEmpty()) continue;
                      for (IFeatureTree contextFeatureName : contextFeatureNames) {
                          IConstraint modifiedConstraint = constraint.clone();
                          LinkedHashSet<IFeature> features = constraint.getReferencedFeatures();
@@ -506,7 +511,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                          for (IFeature feature : features) {
                          	IFeatureTree currentFeatureTree = feature.getFeatureTree().get();
                         	 
-                         	IFormula replacement = new Literal("");
+                         	IFormula replacement = null;
                          	if (isGlobal) {
                          		// 2., 3. and 4. case: feature is not the current context feature
                          		IFeatureTree currentCardinalityParent = getNextCardinalityParent(currentFeatureTree);
@@ -519,12 +524,26 @@ public class ComputeFormula extends AComputation<IFormula> {
                          			    replacement = createOrReplacementWithoutContext(feature);
                          			}
                          		} else {
-                         			List<IFeatureTree> contextualFeatureName = findContextualFeatureNames(contextFeatureName, feature);
-                             		replacement = new Literal(contextualFeatureName.get(0).getAttributeValue(literalNameAttribute).orElse(""));
+                         		    List<IFeatureTree> contextualFeatureName = findContextualFeatureNames(contextFeatureName, feature);
+                         		    if (contextualFeatureName != null && !contextualFeatureName.isEmpty()) {
+                         		        replacement = new Literal(
+                         		            contextualFeatureName.get(0).getAttributeValue(literalNameAttribute)
+                         		                .orElse(contextualFeatureName.get(0).getFeature().getName().orElse(""))
+                         		        );
+                         		    } else {
+                         		        replacement = new Literal(feature.getName().orElse("")); // graceful fallback
+                         		    }
                          		}
                          	} else {
-                         		List<IFeatureTree> contextualFeatureName = findContextualFeatureNames(contextFeatureName, feature);
-                         		replacement = new Literal(contextualFeatureName.get(0).getFeature().getName().get());
+                         	    List<IFeatureTree> contextualFeatureName = findContextualFeatureNames(contextFeatureName, feature);
+                         	    if (contextualFeatureName != null && !contextualFeatureName.isEmpty()) {
+                         	        replacement = new Literal(
+                         	            contextualFeatureName.get(0).getAttributeValue(literalNameAttribute)
+                         	                .orElse(contextualFeatureName.get(0).getFeature().getName().orElse(""))
+                         	        );
+                         	    } else {
+                         	        replacement = new Literal(feature.getName().orElse("")); // fallback
+                         	    }
                          	}
                          	
                          	if (replacement != null) {
@@ -579,20 +598,12 @@ public class ComputeFormula extends AComputation<IFormula> {
     	
     }
     
-    private boolean contextUnderCurrentContext(IFeatureTree currentContex, IFeatureTree context) {
-    	  IFeatureTree currentNode = context;
-
-    	  while (currentNode != null) {
-    	      // Check if the current node in our walk is the one we're looking for.
-    	      if (currentNode == context) {
-    	          return true; // We found it in the ancestry chain.
-    	      }
-    	      // If not, move up to the next parent for the next iteration.
-    	      currentNode = getNextCardinalityParent(currentNode);
-    	  }
-
-    	  // If the loop finishes, it means we reached the top (currentNode became null)
-    	  // without ever finding currentContext.
-    	  return false;
+    private boolean contextUnderCurrentContext(IFeatureTree currentContext, IFeatureTree context) {
+        IFeatureTree node = context;
+        while (node != null) {
+            if (node == currentContext) return true;  // found ancestor
+            node = node.getParent().isPresent() ? getNextCardinalityParent(node.getParent().get()) : null;
+        }
+        return false;
     }
 }

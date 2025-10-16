@@ -591,7 +591,39 @@ class ComputeFormulaTest {
         executeTest();
         
     }
+    @Test
+    void GlobalConstraintsWithOneContext() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
 
+        // create and set cardinality for the child feature
+        IFeature childFeature = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeatureTree1 = rootTree.mutate().addFeatureBelow(childFeature);
+        childFeatureTree1.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        // add normal feature below
+        IFeature childFeature2 = featureModel.mutate().addFeature("F"); 
+        rootTree.mutate().addFeatureBelow(childFeature2);
+        
+        
+        // cross-tree constraints
+        featureModel.mutate().addConstraint(new Implies(new Literal("F"), new Literal("A")));
+       
+        expected = new Reference(new And(
+                new Literal("root"),
+                new Implies(new Literal("A_1"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("A_1")),
+                new Implies(new Literal("F"), new Literal("root"))));
+        
+      
+
+        executeTest();
+        
+    }
+        
     private void executeTest() {
 
         ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
