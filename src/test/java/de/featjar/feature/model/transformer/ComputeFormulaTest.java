@@ -201,6 +201,61 @@ class ComputeFormulaTest {
     }
 
     @Test
+    void globalConstraintWithTwoContexts() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature3);
+
+        IFeature childFeature4 = featureModel.mutate().addFeature("D");
+        IFeatureTree childFeature4Tree = rootTree.mutate().addFeatureBelow(childFeature4);
+        childFeature4Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        // global cross-tree constraint in the context of A and D (both cardinalities)
+        featureModel.mutate().addConstraint(new And(new Literal("D"), new Literal("C")));
+
+        expected = new Reference(new And(
+                // build constraints out of tree
+                new Literal("root"),
+                new Implies(new Literal("A_1"), new Literal("root")),
+                new Implies(new Literal("B.A_1"), new Literal("A_1")),
+                new Implies(new Literal("C.A_1"), new Literal("A_1")),
+                new Implies(new Literal("A_2"), new Literal("root")),
+                new Implies(new Literal("A_2"), new Literal("A_1")),
+                new Implies(new Literal("B.A_2"), new Literal("A_2")),
+                new Implies(new Literal("C.A_2"), new Literal("A_2")),
+                new Implies(new Literal("D_1"), new Literal("root")),
+                new Implies(new Literal("D_2"), new Literal("root")),
+                new Implies(new Literal("D_2"), new Literal("D_1")),
+
+                // build constraints out of cross-tree-constraints
+                new Implies(
+                        new Literal("A_1"),
+                        new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_1"))),
+                new Implies(
+                        new Literal("A_2"),
+                        new And(new Or(new Literal("D_1"), new Literal("D_2")), new Literal("C.A_2"))),
+                new Implies(
+                        new Literal("D_1"),
+                        new And(new Literal("D_1"), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
+                new Implies(
+                        new Literal("D_2"),
+                        new And(new Literal("D_2"), new Or(new Literal("C.A_1"), new Literal("C.A_2"))))));
+
+        executeTest();
+    }
+
+    @Test
     void withCardinalityAndChildInbetween() {
         IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
@@ -549,47 +604,44 @@ class ComputeFormulaTest {
 
         executeTest();
     }
-    
+
     @Test
     void cardinalitiesOverCrossTreeConstraints() {
-    	IFeatureTree rootTree =
+        IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
         rootTree.mutate().makeMandatory();
         rootTree.mutate().toAndGroup();
-        
+
         // features A, E and F under root
         IFeature featureA = featureModel.mutate().addFeature("A");
         IFeatureTree treeA = rootTree.mutate().addFeatureBelow(featureA);
         treeA.mutate().setFeatureCardinality(Range.of(0, 2));
-        
+
         IFeature featureE = featureModel.mutate().addFeature("E");
         IFeatureTree treeE = rootTree.mutate().addFeatureBelow(featureE);
         treeE.mutate().setFeatureCardinality(Range.of(0, 2));
-        
+
         IFeature featureF = featureModel.mutate().addFeature("F");
         IFeatureTree treeF = rootTree.mutate().addFeatureBelow(featureF);
-        
+
         // features B and C are children of A
         IFeature featureB = featureModel.mutate().addFeature("B");
         IFeature featureC = featureModel.mutate().addFeature("C");
         IFeatureTree treeB = treeA.mutate().addFeatureBelow(featureB);
         treeA.mutate().addFeatureBelow(featureC);
-        
+
         // feature D is a child of B
         IFeature featureD = featureModel.mutate().addFeature("D");
         IFeatureTree treeD = treeB.mutate().addFeatureBelow(featureD);
         treeD.mutate().setFeatureCardinality(Range.of(0, 2));
-        
-        
-        
+
         // cross-tree constraints
         featureModel.mutate().addConstraint(new Implies(new Literal("F"), new And(new Literal("B"), new Literal("C"))));
         featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("E")));
         featureModel.mutate().addConstraint(new Implies(new Literal("E"), new And(new Literal("B"), new Literal("C"))));
         featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("D")));
-        
+
         executeTest();
-        
     }
     @Test
     void GlobalConstraintsWithOneContext() {
