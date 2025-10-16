@@ -79,7 +79,6 @@ public class ComputeFormula extends AComputation<IFormula> {
     static Attribute<String> literalNameAttribute = new Attribute<>("literalName", String.class);
     private Map<IFeature, List<IFeatureTree>> featureToCardinalityNames = new HashMap<>();
     private Map<IFeatureTree, Map<IFeature, List<IFeatureTree>>> featureToChildren = new HashMap<>();
-    private List<CustomObj> featureToChild2 = new ArrayList<CustomObj>();
 
     public ComputeFormula(IComputation<IFeatureModel> formula) {
         super(formula, Computations.of(Boolean.FALSE));
@@ -495,11 +494,12 @@ public class ComputeFormula extends AComputation<IFormula> {
             
             boolean isGlobal = false;
             Set<IFeatureTree> contexts = contextOriginalFeatures.getContextFeatures();
+            List<IFeatureTree> orderedContexts = new ArrayList<>(contexts);
             if (contexts.size() > 1) {
             	isGlobal = true;
             }
             
-            for (IFeatureTree context : contexts) {
+            for (IFeatureTree context : orderedContexts) {
             	 List<IFeatureTree> contextFeatureNames = featureToCardinalityNames.get(context.getFeature());
 
                  for (IConstraint constraint : constraints) {

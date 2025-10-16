@@ -654,13 +654,14 @@ class ComputeFormulaTest {
 				new Implies(new Literal("B_2.A_2"), new Literal("A_2")),
 				new Implies(new Literal("B_2.A_2"), new Literal("B_1.A_2")),
 				
+				new Implies( new Literal("A_1"), new Implies( new Literal("A_1"), new Or(new Literal("B_1.A_1"), new Literal("B_2.A_1")))),
+				new Implies( new Literal("A_2"), new Implies( new Literal("A_2"), new Or(new Literal("B_1.A_2"), new Literal("B_2.A_2")))),
+				
 				new Implies( new Literal("B_1.A_1"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_1.A_1"))),
 				new Implies( new Literal("B_2.A_1"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_2.A_1"))),
 				new Implies( new Literal("B_1.A_2"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_1.A_2"))),
-				new Implies( new Literal("B_2.A_2"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_2.A_2"))),
+				new Implies( new Literal("B_2.A_2"), new Implies(new Or(new Literal("A_1"), new Literal("A_2") ), new Literal("B_2.A_2")))
 				
-				new Implies( new Literal("A_1"), new Implies( new Literal("A_1"), new Or(new Literal("B_1.A_1"), new Literal("B_2.A_1")))),
-				new Implies( new Literal("A_2"), new Implies( new Literal("A_2"), new Or(new Literal("B_1.A_2"), new Literal("B_2.A_2"))))
 				));
         		
 
