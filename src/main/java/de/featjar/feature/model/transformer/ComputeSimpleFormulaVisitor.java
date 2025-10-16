@@ -26,6 +26,7 @@ import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.visitor.ITreeVisitor;
 import de.featjar.feature.model.FeatureTree.Group;
+import de.featjar.feature.model.Features;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.Expressions;
@@ -55,7 +56,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
     protected ArrayList<IFormula> constraints;
     protected HashSet<Variable> variables;
-    private Map<Variable, Map<IAttribute<?>, Object>> attributes;
+    private Map<IFormula, Map<IAttribute<?>, Object>> attributes;
     private Boolean hasCardinalityFeature;
 
     public Boolean getHasCardinalityFeature() {
@@ -65,11 +66,11 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
     public ComputeSimpleFormulaVisitor(
             ArrayList<IFormula> constraints,
             HashSet<Variable> variables,
-            Map<Variable, Map<IAttribute<?>, Object>> attributes) {
+            Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
         this.constraints = constraints;
         this.variables = variables;
         this.attributes = attributes;
-        this.hasCardinalityFeature = true;
+        this.hasCardinalityFeature = false;
     }
 
     @Override
@@ -86,14 +87,14 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         if (node.getFeature().getAttributes().isPresent()) {
             // name is an attribute as well
-            attributes.put(variable, node.getFeature().getAttributes().get());
+            attributes.put(Features.createFeatureFormel(feature), node.getFeature().getAttributes().get());
         }
 
         // TODO take featureRanges into Account
         Result<IFeatureTree> potentialParentTree = node.getParent();
         //Literal featureLiteral = Expressions.literal(featureName);
 
-        IFormula featureFormula = createFeatureFormel(node.getFeature());
+        IFormula featureFormula = Features.createFeatureFormel(node.getFeature());
 
         if (potentialParentTree.isEmpty()) {
             handleRoot(featureFormula, node);
@@ -108,22 +109,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         return ITreeVisitor.super.firstVisit(path);
     }
 
-    private IFormula createFeatureFormel(IFeature feature) {
-        return createFeatureFormel(feature, feature.getName().orElse(""));
-    }
 
-    private IFormula createFeatureFormel(IFeature feature, String featureName) {
-        if (feature.getType().equals(Boolean.class)) {
-            return Expressions.literal(featureName);
-        } else if (feature.getType().equals(Integer.class)) {
-            return new NotEquals(new Variable(featureName, feature.getType()), new Constant(0));
-        } else if(feature.getType().equals(Float.class) || feature.getType().equals(Double.class)) {
-            return new NotEquals(new Variable(featureName, Double.class), new Constant(0.0));
-        } else {
-            FeatJAR.log().warning("Could not handle type "+ feature.getType());
-            return null;
-        }
-    }
 
     private void handleParent(IFormula featureLiteral, IFeatureTree node) {
         // cardinal features must not be a parent
@@ -150,7 +136,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         IFormula parentFormula = getNextNonCardinalityParent(node);
         for (int i = 1; i <= upperBound; i++) {
             literalName = node.getFeature().getName().get() + "_" + i;
-            featureFormula = createFeatureFormel(node.getFeature(),  literalName);
+            featureFormula = Features.createFeatureFormel(node.getFeature(),  literalName);
             handleParent(featureFormula, node);
 
             if (i > 1) {
@@ -177,7 +163,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
             return getNextNonCardinalityParent(node);
         }
 
-        return createFeatureFormel(node.getFeature());
+        return Features.createFeatureFormel(node.getFeature());
     }
 
     private void handleGroups(IFormula featureFormula, IFeatureTree node) {
@@ -196,11 +182,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         List<? extends IFeatureTree> children = node.getChildren();
         for (IFeatureTree childNode : children) {
-            Literal childLiteral =
-                    Expressions.literal(childNode.getFeature().getName().orElse(""));
+            IFormula childFormula = Features.createFeatureFormel(childNode.getFeature());
 
             if (childNode.isMandatory()) {
-                constraints.add(new Implies(featureFormula, childLiteral));
+                constraints.add(new Implies(featureFormula, childFormula));
             }
 
             int groupID = childNode.getParentGroupID();
@@ -208,7 +193,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
             if (list == null) {
                 groupLiterals.set(groupID, list = new ArrayList<>());
             }
-            list.add(childLiteral);
+            list.add(childFormula);
         }
 
         for (int i = 0; i < groupCount; i++) {
