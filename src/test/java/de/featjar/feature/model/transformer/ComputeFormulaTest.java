@@ -541,9 +541,9 @@ class ComputeFormulaTest {
 		// Add the cross-tree-constraints
 		featureModel.mutate().addConstraint(new Implies(new Literal("C"), new Literal("B")));
 		featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("C")));
-		// featureModel.mutate().addConstraint(new Or( new Not(new Literal("D")), new
-		// And(new Literal("C"), new
-		// Literal("B"))));
+		featureModel.mutate().addConstraint(new Or( new Not(new Literal("D")), new
+				And(new Literal("C"), new
+						Literal("B"))));
 
 		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
 				new Implies(new Literal("C.A_1"), new Literal("A_1")),
@@ -552,6 +552,7 @@ class ComputeFormulaTest {
 				new Implies(new Literal("A_2"), new Literal("A_1")),
 				new Implies(new Literal("C.A_2"), new Literal("A_2")),
 				new Implies(new Literal("B.A_2"), new Literal("A_2")),
+				new Implies(new Literal("D"), new Literal("root")),
 				new Implies(new Literal("A_1"), new Implies(new Literal("C.A_1"), new Literal("B.A_1"))),
 				new Implies(new Literal("A_2"), new Implies(new Literal("C.A_2"), new Literal("B.A_2"))),
 				new Implies(new Literal("A_1"), new Implies(new Literal("B.A_1"), new Literal("C.A_1"))),
@@ -620,7 +621,9 @@ class ComputeFormulaTest {
 				new Implies(new Literal("A_2"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("A_1")), new Implies(new Literal("F"), new Literal("root")),
 				new Implies(new Literal("A_1"), new Implies(new Literal("F"), new Literal("A_1"))),
-				new Implies(new Literal("A_2"), new Implies(new Literal("F"), new Literal("A_2")))));
+				new Implies(new Literal("A_2"), new Implies(new Literal("F"), new Literal("A_2"))),
+				
+				new Implies(new Literal("F"), new Or(new Literal("A_1"), new Literal("A_2")))));
 
 		executeTest();
 
@@ -667,7 +670,10 @@ class ComputeFormulaTest {
 				new Implies(new Literal("B_1.A_2"),
 						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("B_1.A_2"))),
 				new Implies(new Literal("B_2.A_2"),
-						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("B_2.A_2")))
+						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("B_2.A_2"))),
+				
+				new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Or(new Literal("B_1.A_1"), new Literal("B_2.A_1"),
+						new Literal("B_1.A_2"), new Literal("B_2.A_2")))
 
 		));
 
