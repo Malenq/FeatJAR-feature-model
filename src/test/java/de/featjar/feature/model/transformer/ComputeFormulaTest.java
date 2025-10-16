@@ -549,6 +549,48 @@ class ComputeFormulaTest {
 
         executeTest();
     }
+    
+    @Test
+    void cardinalitiesOverCrossTreeConstraints() {
+    	IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+        
+        // features A, E and F under root
+        IFeature featureA = featureModel.mutate().addFeature("A");
+        IFeatureTree treeA = rootTree.mutate().addFeatureBelow(featureA);
+        treeA.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        IFeature featureE = featureModel.mutate().addFeature("E");
+        IFeatureTree treeE = rootTree.mutate().addFeatureBelow(featureE);
+        treeE.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        IFeature featureF = featureModel.mutate().addFeature("F");
+        IFeatureTree treeF = rootTree.mutate().addFeatureBelow(featureF);
+        
+        // features B and C are children of A
+        IFeature featureB = featureModel.mutate().addFeature("B");
+        IFeature featureC = featureModel.mutate().addFeature("C");
+        IFeatureTree treeB = treeA.mutate().addFeatureBelow(featureB);
+        treeA.mutate().addFeatureBelow(featureC);
+        
+        // feature D is a child of B
+        IFeature featureD = featureModel.mutate().addFeature("D");
+        IFeatureTree treeD = treeB.mutate().addFeatureBelow(featureD);
+        treeD.mutate().setFeatureCardinality(Range.of(0, 2));
+        
+        
+        
+        // cross-tree constraints
+        featureModel.mutate().addConstraint(new Implies(new Literal("F"), new And(new Literal("B"), new Literal("C"))));
+        featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("E")));
+        featureModel.mutate().addConstraint(new Implies(new Literal("E"), new And(new Literal("B"), new Literal("C"))));
+        featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("D")));
+        
+        executeTest();
+        
+    }
 
     private void executeTest() {
 
