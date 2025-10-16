@@ -615,7 +615,9 @@ class ComputeFormulaTest {
 		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("root")),
 				new Implies(new Literal("A_2"), new Literal("A_1")),
-				new Implies(new Literal("F"), new Literal("root"))));
+				new Implies(new Literal("F"), new Literal("root")),
+				new Implies(new Literal("A_1"), new Implies(new Literal("F"), new Literal("A_1"))),
+				new Implies(new Literal("A_2"), new Implies(new Literal("F"), new Literal("A_2")))));
 
 		executeTest();
 
