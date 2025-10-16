@@ -73,7 +73,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         // TODO use better error value
         IFeature feature = node.getFeature();
         String featureName = feature.getName().orElse("");
-        // TODO: do not add variable if its a cardinality var. Add duplicates instead
+
         Variable variable = new Variable(featureName, feature.getType());
         variables.add(variable);
 
@@ -126,6 +126,11 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
     private void handleCardinalityFeature(Literal featureLiteral, IFeatureTree node) {
 
+        // remove cardinality feature variable from variables
+        Variable variable = new Variable(
+                node.getFeature().getName().get(), node.getFeature().getType());
+        variables.remove(variable);
+
         int lowerBound = node.getFeatureCardinalityLowerBound();
         int upperBound = node.getFeatureCardinalityUpperBound();
 
@@ -150,6 +155,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
             }
 
             featureConstraintList.add(featureLiteral);
+
+            Variable cardinalityVariable =
+                    new Variable(literalName, node.getFeature().getType());
+            variables.add(cardinalityVariable);
         }
 
         // replace original feature with or of newly created cardinality feature pseudo
