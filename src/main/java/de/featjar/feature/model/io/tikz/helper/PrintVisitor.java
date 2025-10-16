@@ -7,7 +7,6 @@ import de.featjar.feature.model.FeatureTree;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * This class travers a given {@link IFeatureTree} and generates the Tikz representation of the tree.
@@ -28,9 +27,9 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
     public TraversalAction firstVisit(List<IFeatureTree> path) {
         IFeature feature = ITreeVisitor.getCurrentNode(path).getFeature();
 
-        new AttributeHelper(feature, stringBuilder)
+        new TikzAttributeHelper(feature, stringBuilder)
                 .addFilterValue("name")
-                .setFilterType(AttributeHelper.FilterType.DISPLAY)
+                .setFilterType(TikzAttributeHelper.FilterType.DISPLAY)
                 .build();
         insertNodeHead(feature);
         handleGroups(feature);

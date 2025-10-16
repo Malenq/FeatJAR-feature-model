@@ -5,8 +5,8 @@ import de.featjar.feature.model.IConstraint;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
-import de.featjar.feature.model.io.tikz.helper.MatrixHelper;
-import de.featjar.feature.model.io.tikz.helper.MatrixType;
+import de.featjar.feature.model.io.tikz.helper.TikzMatrixHelper;
+import de.featjar.feature.model.io.tikz.helper.TikzMatrixType;
 import de.featjar.feature.model.io.tikz.helper.PrintVisitor;
 import de.featjar.formula.io.textual.ExpressionSerializer;
 import de.featjar.formula.io.textual.LaTexSymbols;
@@ -57,27 +57,27 @@ public class TikzMainFormat {
     }
 
     private void printLegend() {
-        MatrixHelper matrixHelper = new MatrixHelper(MatrixType.LEGEND);
+        TikzMatrixHelper tikzMatrixHelper = new TikzMatrixHelper(TikzMatrixType.LEGEND);
 
         if (stringBuilder.indexOf(",abstract") != -1 && stringBuilder.indexOf(",concrete") != -1) {
-            matrixHelper.writeNode("[abstract,label=right:Abstract Feature] {}");
-            matrixHelper.writeNode("[concrete,label=right:Concrete Feature] {}");
+            tikzMatrixHelper.writeNode("[abstract,label=right:Abstract Feature] {}");
+            tikzMatrixHelper.writeNode("[concrete,label=right:Concrete Feature] {}");
         } else if (stringBuilder.indexOf(",abstract") != -1) {
-            matrixHelper.writeNode("[abstract,label=right:Feature] {}");
+            tikzMatrixHelper.writeNode("[abstract,label=right:Feature] {}");
         } else if (stringBuilder.indexOf(",concrete") != -1) {
-            matrixHelper.writeNode("[concrete,label=right:Feature] {}");
+            tikzMatrixHelper.writeNode("[concrete,label=right:Feature] {}");
         }
 
         if (stringBuilder.indexOf(",mandatory") != -1) {
-            matrixHelper.writeNode("[mandatory,label=right:Mandatory] {}");
+            tikzMatrixHelper.writeNode("[mandatory,label=right:Mandatory] {}");
         }
 
         if (stringBuilder.indexOf(",optional") != -1) {
-            matrixHelper.writeNode("[optional,label=right:Optional] {}");
+            tikzMatrixHelper.writeNode("[optional,label=right:Optional] {}");
         }
 
         if (stringBuilder.indexOf(",or") != -1) {
-            matrixHelper
+            tikzMatrixHelper
                     .writeFillDraw("(0.1,0) - +(-0,-0.2) - +(0.2,-0.2)- +(0.1,0)")
                     .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
                     .writeDraw("(0.1,0) -- +(0.2,-0.4)")
@@ -86,14 +86,14 @@ public class TikzMainFormat {
         }
 
         if (stringBuilder.indexOf(",alternative") != -1) {
-            matrixHelper
+            tikzMatrixHelper
                     .writeDraw("(0.1,0) -- +(-0.2, -0.4)")
                     .writeDraw("(0.1,0) -- +(0.2,-0.4)")
                     .writeDraw("(0,-0.2) arc (240:300:0.2)")
                     .writeNode("[label=right:Alternative Group] {}");
         }
 
-        stringBuilder.append(matrixHelper.build());
+        stringBuilder.append(tikzMatrixHelper.build());
     }
 
     private void printConstraints() {

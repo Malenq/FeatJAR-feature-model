@@ -5,7 +5,7 @@ package de.featjar.feature.model.io.tikz.helper;
  * @author Lara Merza
  * @author Jonas Hanke
  */
-public enum MatrixType {
+public enum TikzMatrixType {
 
     LEGEND("	\\matrix [anchor=north west] at (current bounding box.north east) {" + System.lineSeparator() + "		\\node [placeholder] {}; \\\\" + System.lineSeparator()
             + "	};" + System.lineSeparator() + "	\\matrix [draw=drawColor,anchor=north west] at (current bounding box.north east) {" + System.lineSeparator()
@@ -15,7 +15,7 @@ public enum MatrixType {
 
     final String header;
 
-    MatrixType(String header) {
+    TikzMatrixType(String header) {
         this.header = header;
     }
 

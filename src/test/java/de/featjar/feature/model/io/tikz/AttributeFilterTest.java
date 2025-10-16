@@ -3,14 +3,12 @@ package de.featjar.feature.model.io.tikz;
 import de.featjar.base.FeatJAR;
 import de.featjar.base.data.Attribute;
 import de.featjar.base.data.identifier.Identifiers;
-import de.featjar.feature.model.Feature;
 import de.featjar.feature.model.FeatureModel;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
-import de.featjar.feature.model.io.tikz.helper.AttributeHelper;
+import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -66,11 +64,11 @@ public class AttributeFilterTest {
     public void test1() {
         StringBuilder stringBuilder = new StringBuilder();
 
-        AttributeHelper attributeHelper = new AttributeHelper(feature, stringBuilder)
-                .setFilterType(AttributeHelper.FilterType.DISPLAY)
+        TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
+                .setFilterType(TikzAttributeHelper.FilterType.DISPLAY)
                 .addFilterValue("int-attribute");
 
-        attributeHelper.build();
+        tikzAttributeHelper.build();
 
         Assertions.assertEquals(stringBuilder.toString(), FIRST_TEST_OUTPUT);
     }
@@ -79,11 +77,11 @@ public class AttributeFilterTest {
     public void test2() {
         StringBuilder stringBuilder = new StringBuilder();
 
-        AttributeHelper attributeHelper = new AttributeHelper(feature, stringBuilder)
-                .setFilterType(AttributeHelper.FilterType.DISPLAY)
+        TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
+                .setFilterType(TikzAttributeHelper.FilterType.DISPLAY)
                 .addFilterValue("int-attribute", "bool-attribute");
 
-        attributeHelper.build();
+        tikzAttributeHelper.build();
 
         Assertions.assertEquals(stringBuilder.toString(), SECOND_TEST_OUTPUT);
     }
@@ -92,11 +90,11 @@ public class AttributeFilterTest {
     public void test3() {
         StringBuilder stringBuilder = new StringBuilder();
 
-        AttributeHelper attributeHelper = new AttributeHelper(feature, stringBuilder)
-                .setFilterType(AttributeHelper.FilterType.WITH_OUT)
+        TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
+                .setFilterType(TikzAttributeHelper.FilterType.WITH_OUT)
                 .addFilterValue("int-attribute");
 
-        attributeHelper.build();
+        tikzAttributeHelper.build();
 
         Assertions.assertEquals(stringBuilder.toString(), THIRD_TEST_OUTPUT);
     }
@@ -105,11 +103,11 @@ public class AttributeFilterTest {
     public void test4() {
         StringBuilder stringBuilder = new StringBuilder();
 
-        AttributeHelper attributeHelper = new AttributeHelper(feature, stringBuilder)
-                .setFilterType(AttributeHelper.FilterType.WITH_OUT)
+        TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
+                .setFilterType(TikzAttributeHelper.FilterType.WITH_OUT)
                 .addFilterValue("int-attribute", "bool-attribute");
 
-        attributeHelper.build();
+        tikzAttributeHelper.build();
 
         Assertions.assertEquals(stringBuilder.toString(), FOURTH_TEST_OUTPUT);
     }

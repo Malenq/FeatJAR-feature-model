@@ -14,7 +14,7 @@ import java.util.Map;
  * @author Lara Merza
  * @author Jonas Hanke
  */
-public class AttributeHelper {
+public class TikzAttributeHelper {
 
     private final String MULTICOLUMN = "\\multicolumn{2}{c}{{0}} \\\\\\hline" + System.lineSeparator();
     private final String VALUE = "\\small\\texttt{{0} ({1})} &\\small\\texttt{= {2}} \\\\" + System.lineSeparator();
@@ -25,13 +25,13 @@ public class AttributeHelper {
     private List<String> filter;
     private FilterType filterType = FilterType.WITH_OUT; // FALLBACK
 
-    public AttributeHelper(IFeature feature, StringBuilder stringBuilder) {
+    public TikzAttributeHelper(IFeature feature, StringBuilder stringBuilder) {
         this.feature = feature;
         this.stringBuilder = stringBuilder;
         this.filter = new ArrayList<>();
     }
 
-    public AttributeHelper(IFeature feature, StringBuilder stringBuilder, List<String> filter) {
+    public TikzAttributeHelper(IFeature feature, StringBuilder stringBuilder, List<String> filter) {
         this.feature = feature;
         this.stringBuilder = stringBuilder;
         this.filter = filter;
@@ -44,7 +44,7 @@ public class AttributeHelper {
      *                   WITH_OUT: Shows every value that isn't in the filter
      * @return this class
      */
-    public AttributeHelper setFilterType(FilterType filterType) {
+    public TikzAttributeHelper setFilterType(FilterType filterType) {
         this.filterType = filterType;
         return this;
     }
@@ -54,7 +54,7 @@ public class AttributeHelper {
      * @param values (the keys, words or whatever that will be filtered in the running process.
      * @return this
      */
-    public AttributeHelper addFilterValue(String... values) {
+    public TikzAttributeHelper addFilterValue(String... values) {
         filter.addAll(List.of(values));
         return this;
     }

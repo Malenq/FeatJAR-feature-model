@@ -7,7 +7,7 @@ package de.featjar.feature.model.io.tikz.helper;
  * @author Lara Merza
  * @author Jonas Hanke
  */
-public class MatrixHelper {
+public class TikzMatrixHelper {
 
     private final static String NODE = "		\\node {replace}; \\\\" + System.lineSeparator();
     private final static String DRAW = "			\\draw[drawColor] {replace};" + System.lineSeparator();
@@ -17,9 +17,9 @@ public class MatrixHelper {
     private final StringBuilder stringBuilder;
     private final String header ;
 
-    public MatrixHelper(MatrixType matrixType) {
+    public TikzMatrixHelper(TikzMatrixType tikzMatrixType) {
         this.stringBuilder = new StringBuilder();
-        this.header = matrixType.getHeader();
+        this.header = tikzMatrixType.getHeader();
         writeHeader();
     }
 
@@ -32,22 +32,22 @@ public class MatrixHelper {
                 .append(System.lineSeparator());
     }
 
-    public MatrixHelper writeNode(String value) {
+    public TikzMatrixHelper writeNode(String value) {
         stringBuilder.append(NODE.replace("{replace}", value));
         return this;
     }
 
-    public MatrixHelper writeDraw(String value) {
+    public TikzMatrixHelper writeDraw(String value) {
         stringBuilder.append(DRAW.replace("{replace}", value));
         return this;
     }
 
-    public MatrixHelper writeFillDraw(String value) {
+    public TikzMatrixHelper writeFillDraw(String value) {
         stringBuilder.append(FILL_DRAW.replace("{replace}", value));
         return this;
     }
 
-    public MatrixHelper writeFill(String value) {
+    public TikzMatrixHelper writeFill(String value) {
         stringBuilder.append(FILL.replace("{replace}", value));
         return this;
     }

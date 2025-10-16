@@ -7,7 +7,7 @@ package de.featjar.feature.model.io.tikz.color;
  * @author Lara Merza
  * @author Jonas Hanke
  */
-public enum FeatureColor {
+public enum TikzFeatureColor {
 
     RED("redColor"),
     ORANGE("orangeColor"),
@@ -21,10 +21,10 @@ public enum FeatureColor {
     PINK("pinkColor"),
     NO_COLOR("");
 
-    public static String color(FeatureColor featureColor) {
-        for (FeatureColor featureColors : values()) {
-            if (featureColor.equals(featureColors)) {
-                return featureColors.getColor();
+    public static String color(TikzFeatureColor tikzFeatureColor) {
+        for (TikzFeatureColor tikzFeatureColors : values()) {
+            if (tikzFeatureColor.equals(tikzFeatureColors)) {
+                return tikzFeatureColors.getColor();
             }
         }
         return NO_COLOR.getColor();
@@ -32,7 +32,7 @@ public enum FeatureColor {
 
     final String color;
 
-    FeatureColor(String color) {
+    TikzFeatureColor(String color) {
         this.color = color;
     }
 
