@@ -6,6 +6,16 @@ import de.featjar.formula.structure.predicate.NotEquals;
 import de.featjar.formula.structure.term.value.Constant;
 import de.featjar.formula.structure.term.value.Variable;
 
+/**
+ * Defines useful methods to wrap a bool or numeric feature into a IFormula:
+ *      bool: {@link de.featjar.formula.structure.predicate.Literal}
+ *      int: {@link NotEquals 0}
+ *      float: {@link NotEquals 0}
+ *
+ * Numeric features are therefore selected, if there value is not 0.
+ *
+ * @author Jonas Hanke
+ */
 public class Features {
 
     public static IFormula createFeatureFormel(IFeature feature) {
