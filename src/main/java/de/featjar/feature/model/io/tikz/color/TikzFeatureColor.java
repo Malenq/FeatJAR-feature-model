@@ -21,9 +21,9 @@ public enum TikzFeatureColor {
     PINK("pinkColor"),
     NO_COLOR("");
 
-    public static String color(TikzFeatureColor tikzFeatureColor) {
+    public static String color(String tikzFeatureColor) {
         for (TikzFeatureColor tikzFeatureColors : values()) {
-            if (tikzFeatureColor.equals(tikzFeatureColors)) {
+            if (tikzFeatureColors.getColor().equalsIgnoreCase(tikzFeatureColor)) {
                 return tikzFeatureColors.getColor();
             }
         }
