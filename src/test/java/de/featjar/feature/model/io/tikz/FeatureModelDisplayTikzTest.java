@@ -5,9 +5,9 @@ import de.featjar.base.data.Attribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.feature.model.*;
+import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
 import de.featjar.formula.structure.Expressions;
 import de.featjar.formula.structure.connective.*;
-import de.featjar.formula.structure.term.value.Variable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,6 +15,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Test the full output with a test feature model and attributes, constrains and more
@@ -102,7 +103,11 @@ public class FeatureModelDisplayTikzTest {
 
         String value = expectedOutput.toString();
 
-        new TikzGraphicalFeatureModelFormat().serialize(featureModel).ifPresent(output -> {
+        TikzGraphicalFeatureModelFormat tikzGraphicalFeatureModelFormat = new TikzGraphicalFeatureModelFormat(
+                TikzAttributeHelper.FilterType.WITH_OUT,
+                List.of("name", "abstract")
+        );
+        tikzGraphicalFeatureModelFormat.serialize(featureModel).ifPresent(output -> {
             FeatJAR.log().info("Expected Output: " + value);
             FeatJAR.log().info("Acutally Output: " + output);
 
@@ -113,7 +118,11 @@ public class FeatureModelDisplayTikzTest {
     // Todo: Add @Test here and remove the other @Test on the method perform
     // @Test
     public void createTestFile() {
-        new TikzGraphicalFeatureModelFormat().serialize(featureModel).ifPresent(this::writeToFile);
+        TikzGraphicalFeatureModelFormat tikzGraphicalFeatureModelFormat = new TikzGraphicalFeatureModelFormat(
+                TikzAttributeHelper.FilterType.WITH_OUT,
+                List.of("name", "abstract")
+        );
+        tikzGraphicalFeatureModelFormat.serialize(featureModel).ifPresent(this::writeToFile);
     }
 
     /**

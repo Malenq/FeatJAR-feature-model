@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 /**
  * Test for displaying the attributes in tikz (filter)
  *
@@ -66,7 +68,7 @@ public class AttributeFilterTest {
 
         TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
                 .setFilterType(TikzAttributeHelper.FilterType.DISPLAY)
-                .addFilterValue("int-attribute");
+                .addFilterValue(List.of("int-attribute"));
 
         tikzAttributeHelper.build();
 
@@ -79,7 +81,7 @@ public class AttributeFilterTest {
 
         TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
                 .setFilterType(TikzAttributeHelper.FilterType.DISPLAY)
-                .addFilterValue("int-attribute", "bool-attribute");
+                .addFilterValue(List.of("int-attribute", "bool-attribute"));
 
         tikzAttributeHelper.build();
 
@@ -92,7 +94,7 @@ public class AttributeFilterTest {
 
         TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
                 .setFilterType(TikzAttributeHelper.FilterType.WITH_OUT)
-                .addFilterValue("int-attribute");
+                .addFilterValue(List.of("int-attribute"));
 
         tikzAttributeHelper.build();
 
@@ -105,7 +107,7 @@ public class AttributeFilterTest {
 
         TikzAttributeHelper tikzAttributeHelper = new TikzAttributeHelper(feature, stringBuilder)
                 .setFilterType(TikzAttributeHelper.FilterType.WITH_OUT)
-                .addFilterValue("int-attribute", "bool-attribute");
+                .addFilterValue(List.of("int-attribute", "bool-attribute"));
 
         tikzAttributeHelper.build();
 
