@@ -127,6 +127,9 @@ public class ComputeFormula extends AComputation<IFormula> {
 
 	/**
 	 * Creates tree constraints for the feature tree under every root node.
+	 * @param featureModel
+	 * @param constraints
+	 * @param variables
 	 */
 	private void createTreeConstraints(IFeatureModel featureModel, ArrayList<IFormula> constraints,
 			HashSet<Variable> variables) {

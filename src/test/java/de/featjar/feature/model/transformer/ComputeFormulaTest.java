@@ -21,6 +21,7 @@
 package de.featjar.feature.model.transformer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import de.featjar.base.computation.ComputeConstant;
@@ -669,71 +670,84 @@ class ComputeFormulaTest {
 		featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("E")));
 		featureModel.mutate().addConstraint(new Implies(new Literal("E"), new And(new Literal("B"), new Literal("C"))));
 		featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("D")));
-		
-		
-		expected = new Reference(new And(
-			    new Literal("root"),
-			    new Implies(new Literal("A_1"), new Literal("root")),
-			    new Implies(new Literal("B.A_1"), new Literal("A_1")),
-			    new Implies(new Literal("D_1.B.A_1"), new Literal("B.A_1")),
-			    new Implies(new Literal("D_2.B.A_1"), new Literal("B.A_1")),
-			    new Implies(new Literal("D_2.B.A_1"), new Literal("D_1.B.A_1")),
-			    new Implies(new Literal("C.A_1"), new Literal("A_1")),
-			    
-			    
-			    new Implies(new Literal("A_2"), new Literal("root")),
-			    new Implies(new Literal("A_2"), new Literal("A_1")),
-			    new Implies(new Literal("B.A_2"), new Literal("A_2")),
-			    new Implies(new Literal("D_1.B.A_2"), new Literal("B.A_2")),
-			    new Implies(new Literal("D_2.B.A_2"), new Literal("B.A_2")),
-			    new Implies(new Literal("D_2.B.A_2"), new Literal("D_1.B.A_2")),
-			    new Implies(new Literal("C.A_2"), new Literal("A_2")),
-			    
-			    new Implies(new Literal("E_1"), new Literal("root")),
-			    new Implies(new Literal("E_2"), new Literal("root")),
-			    new Implies(new Literal("E_2"), new Literal("E_1")),
-			    new Implies(new Literal("F"), new Literal("root")),
-			    new Implies(new Literal("E_1"),new Implies( new Or(new Literal("A_1"), new Literal("A_2")),new Literal("E_1") )),
-			    new Implies(new Literal("E_2"),new Implies(new Or(new Literal("A_1"), new Literal("A_2")),new Literal("E_2"))),
-			    new Implies(new Literal("E_1"), new Implies(new Literal("E_1"),new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("C.A_1"), new Literal("C.A_2"))))),
-			    new Implies(new Literal("E_2"),new Implies(new Literal("E_2"), new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("C.A_1"), new Literal("C.A_2"))))),
-			    
-			    
-			    new Implies(new Literal("A_1"),new Implies(new Literal("A_1"),new Or(new Literal("E_1"), new Literal("E_2")))),
-			    new Implies(new Literal("A_2"),new Implies(new Literal("A_2"),new Or(new Literal("E_1"), new Literal("E_2")))),
-			    new Implies(new Literal("A_1"), new Implies(new Or(new Literal("E_1"), new Literal("E_2")), new And(new Literal("B.A_1"), new Literal("C.A_1")))),
-			    new Implies(new Literal("A_2"), new Implies(new Or(new Literal("E_1"), new Literal("E_2")), new And(new Literal("B.A_2"), new Literal("C.A_2")))),
-			    new Implies(new Literal("A_1"), new Implies(new Literal("B.A_1"), new Or(new Literal("D_1.B.A_1"), new Literal("D_2.B.A_1")))),
-			    new Implies(new Literal("A_2"), new Implies(new Literal("B.A_2"), new Or(new Literal("D_1.B.A_2"), new Literal("D_2.B.A_2")))),
-		        
-			    new Implies(new Literal("D_1.B.A_1"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_1.B.A_1") )),
-			    new Implies(new Literal("D_2.B.A_1"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_2.B.A_1") )),
-			    new Implies(new Literal("D_1.B.A_2"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_1.B.A_2") )),
-			    new Implies(new Literal("D_2.B.A_2"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_2.B.A_2") )),
-			    
-			    
-			    new Implies(new Literal("A_1"), new Implies(new Literal("F"), new And(new Literal("B.A_1"), new Literal("C.A_1")))),
-			    new Implies(new Literal("A_2"), new Implies(new Literal("F"), new And(new Literal("B.A_2"), new Literal("C.A_2")))),
-			    new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Or(new Literal("E_1"), new Literal("E_2"))),
-			    
-			    new Implies(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("D_1.B.A_1"), new Literal("D_2.B.A_1"), new Literal("D_1.B.A_2"), new Literal("D_2.B.A_2"))),
-			    new Implies(new Literal("F"), new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
-		        
-			    
-			    new Implies(
-			    		new Or(new Literal("E_1"), new Literal("E_2")), 
-			    		new And(
-			    				new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("C.A_1"), new Literal("C.A_2")))
-			    		
-			    )
-			    
-				
-				
-				
-				));
-		
-		
-		
+
+		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
+				new Implies(new Literal("B.A_1"), new Literal("A_1")),
+				new Implies(new Literal("D_1.B.A_1"), new Literal("B.A_1")),
+				new Implies(new Literal("D_2.B.A_1"), new Literal("B.A_1")),
+				new Implies(new Literal("D_2.B.A_1"), new Literal("D_1.B.A_1")),
+				new Implies(new Literal("C.A_1"), new Literal("A_1")),
+
+				new Implies(new Literal("A_2"), new Literal("root")),
+				new Implies(new Literal("A_2"), new Literal("A_1")),
+				new Implies(new Literal("B.A_2"), new Literal("A_2")),
+				new Implies(new Literal("D_1.B.A_2"), new Literal("B.A_2")),
+				new Implies(new Literal("D_2.B.A_2"), new Literal("B.A_2")),
+				new Implies(new Literal("D_2.B.A_2"), new Literal("D_1.B.A_2")),
+				new Implies(new Literal("C.A_2"), new Literal("A_2")),
+
+				new Implies(new Literal("E_1"), new Literal("root")),
+				new Implies(new Literal("E_2"), new Literal("root")),
+				new Implies(new Literal("E_2"), new Literal("E_1")), new Implies(new Literal("F"), new Literal("root")),
+				new Implies(new Literal("E_1"),
+						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("E_1"))),
+				new Implies(new Literal("E_2"),
+						new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Literal("E_2"))),
+				new Implies(new Literal("E_1"),
+						new Implies(new Literal("E_1"),
+								new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")),
+										new Or(new Literal("C.A_1"), new Literal("C.A_2"))))),
+				new Implies(new Literal("E_2"),
+						new Implies(new Literal("E_2"),
+								new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")),
+										new Or(new Literal("C.A_1"), new Literal("C.A_2"))))),
+
+				new Implies(new Literal("A_1"),
+						new Implies(new Literal("A_1"), new Or(new Literal("E_1"), new Literal("E_2")))),
+				new Implies(new Literal("A_2"),
+						new Implies(new Literal("A_2"), new Or(new Literal("E_1"), new Literal("E_2")))),
+				new Implies(new Literal("A_1"),
+						new Implies(new Or(new Literal("E_1"), new Literal("E_2")),
+								new And(new Literal("B.A_1"), new Literal("C.A_1")))),
+				new Implies(new Literal("A_2"),
+						new Implies(new Or(new Literal("E_1"), new Literal("E_2")),
+								new And(new Literal("B.A_2"), new Literal("C.A_2")))),
+				new Implies(new Literal("A_1"),
+						new Implies(new Literal("B.A_1"), new Or(new Literal("D_1.B.A_1"), new Literal("D_2.B.A_1")))),
+				new Implies(new Literal("A_2"),
+						new Implies(new Literal("B.A_2"), new Or(new Literal("D_1.B.A_2"), new Literal("D_2.B.A_2")))),
+
+				new Implies(new Literal("D_1.B.A_1"),
+						new Implies(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Literal("D_1.B.A_1"))),
+				new Implies(new Literal("D_2.B.A_1"),
+						new Implies(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Literal("D_2.B.A_1"))),
+				new Implies(new Literal("D_1.B.A_2"),
+						new Implies(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Literal("D_1.B.A_2"))),
+				new Implies(new Literal("D_2.B.A_2"),
+						new Implies(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Literal("D_2.B.A_2"))),
+
+				new Implies(new Literal("A_1"),
+						new Implies(new Literal("F"), new And(new Literal("B.A_1"), new Literal("C.A_1")))),
+				new Implies(new Literal("A_2"),
+						new Implies(new Literal("F"), new And(new Literal("B.A_2"), new Literal("C.A_2")))),
+				new Implies(new Or(new Literal("A_1"), new Literal("A_2")),
+						new Or(new Literal("E_1"), new Literal("E_2"))),
+
+				new Implies(new Or(new Literal("B.A_1"), new Literal("B.A_2")),
+						new Or(new Literal("D_1.B.A_1"), new Literal("D_2.B.A_1"), new Literal("D_1.B.A_2"),
+								new Literal("D_2.B.A_2"))),
+				new Implies(new Literal("F"),
+						new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")),
+								new Or(new Literal("C.A_1"), new Literal("C.A_2")))),
+
+				new Implies(new Or(new Literal("E_1"), new Literal("E_2")),
+						new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")),
+								new Or(new Literal("C.A_1"), new Literal("C.A_2")))
+
+				)
+
+		));
+
 		executeTest();
 	}
 
@@ -786,8 +800,7 @@ class ComputeFormulaTest {
 		// cross-tree constraints
 		featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("B")));
 
-		expected = new Reference(new And(
-				new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
+		expected = new Reference(new And(new Literal("root"), new Implies(new Literal("A_1"), new Literal("root")),
 				new Implies(new Literal("B_1.A_1"), new Literal("A_1")),
 				new Implies(new Literal("B_2.A_1"), new Literal("A_1")),
 				new Implies(new Literal("B_2.A_1"), new Literal("B_1.A_1")),
@@ -828,16 +841,14 @@ class ComputeFormulaTest {
 		IFormula resultFormula = computeFormula.computeResult().orElseThrow();
 
 		// not the same amount of constraints in both formulas
-		if (expected.getFirstChild().get().getChildrenCount() != resultFormula.getFirstChild().get()
-				.getChildrenCount()) {
-			fail();
-		}
+		assertNotEquals(expected.getFirstChild().get().getChildrenCount(),
+				resultFormula.getFirstChild().get().getChildrenCount());
 
 		for (IExpression expr : resultFormula.getFirstChild().get().getChildren()) {
 			try {
 				expected.getFirstChild().get().removeChild(expr);
 			} catch (Exception e) {
-				fail();
+				fail(e);
 			}
 		}
 
@@ -854,16 +865,15 @@ class ComputeFormulaTest {
 				.orElseThrow();
 
 		// not the same amount of constraints in both formulas
-		if (expected.getFirstChild().get().getChildrenCount() != resultFormula.getFirstChild().get()
-				.getChildrenCount()) {
-			fail();
-		}
+		assertNotEquals(expected.getFirstChild().get().getChildrenCount(),
+				resultFormula.getFirstChild().get().getChildrenCount());
 
+		// TODO: exchange expected with result 
 		for (IExpression expr : resultFormula.getFirstChild().get().getChildren()) {
 			try {
 				expected.getFirstChild().get().removeChild(expr);
 			} catch (Exception e) {
-				fail();
+				fail(e);
 			}
 		}
 
