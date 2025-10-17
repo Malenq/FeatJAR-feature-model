@@ -91,7 +91,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 
 		IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
 		Collection<IConstraint> crossTreeConstr = featureModel.getConstraints();
-		Map<CustomObj, List<IConstraint>> contextsToConstraints = findContextsToConstraints(crossTreeConstr);
+		Map<ConstraintContexts, List<IConstraint>> contextsToConstraints = findContextsToConstraints(crossTreeConstr);
 
 		// if SIMPLE_TRANSLATION is set to true, use ComputeSimpleFormulaVisitor for
 		// simple cardinality translation
@@ -127,8 +127,8 @@ public class ComputeFormula extends AComputation<IFormula> {
 
 	/**
 	 * Creates tree constraints for the feature tree under every root node.
-	 * @param featureModel
-	 * @param constraints
+	 * @param featureModel for which the constraints are generated
+	 * @param constraints list of constraints to which the generated constraints are added
 	 * @param variables
 	 */
 	private void createTreeConstraints(IFeatureModel featureModel, ArrayList<IFormula> constraints,
@@ -150,6 +150,8 @@ public class ComputeFormula extends AComputation<IFormula> {
 	/**
 	 * Recursively traverses a feature tree with cardinality features and adds the
 	 * tree constraints for every node.
+	 * @param node from which to start the traversal
+	 * @param constraints list of constraints to which the generated constraints are added
 	 */
 	private void addChildConstraints(IFeatureTree node, ArrayList<IFormula> constraints) {
 
@@ -365,8 +367,8 @@ public class ComputeFormula extends AComputation<IFormula> {
 	 * @param crossTreeConstr
 	 * @return mapping from context features to constraints
 	 */
-	private Map<CustomObj, List<IConstraint>> findContextsToConstraints(Collection<IConstraint> crossTreeConstr) {
-		Map<CustomObj, List<IConstraint>> contextsToConstraints = new HashMap<>();
+	private Map<ConstraintContexts, List<IConstraint>> findContextsToConstraints(Collection<IConstraint> crossTreeConstr) {
+		Map<ConstraintContexts, List<IConstraint>> contextsToConstraints = new HashMap<>();
 
 		// iterate through all constraints
 		for (IConstraint constraint : crossTreeConstr) {
@@ -385,7 +387,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 			}
 
 			// group the constraints according to their contextFeatures
-			CustomObj key = new CustomObj(contextFeatures);
+			ConstraintContexts key = new ConstraintContexts(contextFeatures);
 			contextsToConstraints.computeIfAbsent(key, k -> new ArrayList<>()).add(constraint);
 
 		}
@@ -401,12 +403,12 @@ public class ComputeFormula extends AComputation<IFormula> {
 	 * @return list of local and global contextual clone constraints
 	 */
 	private List<IConstraint> createContextualCloneConstraints(
-			Map<CustomObj, List<IConstraint>> contextsToConstraints) {
+			Map<ConstraintContexts, List<IConstraint>> contextsToConstraints) {
 
 		List<IConstraint> finalConstraints = new ArrayList<>();
 
-		for (Map.Entry<CustomObj, List<IConstraint>> entry : contextsToConstraints.entrySet()) {
-			CustomObj contextOriginalFeatures = entry.getKey();
+		for (Map.Entry<ConstraintContexts, List<IConstraint>> entry : contextsToConstraints.entrySet()) {
+			ConstraintContexts contextOriginalFeatures = entry.getKey();
 			List<IConstraint> constraints = entry.getValue();
 
 			boolean isGlobal = false;
@@ -736,10 +738,10 @@ public class ComputeFormula extends AComputation<IFormula> {
 	 * @param contextsToConstraints mapping from contexts to constraints
 	 * @return list of global constraints
 	 */
-	private List<IConstraint> getGlobalConstraints(Map<CustomObj, List<IConstraint>> contextsToConstraints) {
+	private List<IConstraint> getGlobalConstraints(Map<ConstraintContexts, List<IConstraint>> contextsToConstraints) {
 		List<IConstraint> globalConstraints = new ArrayList<>();
 
-		for (Map.Entry<CustomObj, List<IConstraint>> entry : contextsToConstraints.entrySet()) {
+		for (Map.Entry<ConstraintContexts, List<IConstraint>> entry : contextsToConstraints.entrySet()) {
 			List<IConstraint> constraints = entry.getValue();
 
 			for (IConstraint constraint : constraints) {
