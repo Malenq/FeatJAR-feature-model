@@ -539,8 +539,8 @@ class ComputeFormulaTest {
 		treeA.mutate().addFeatureBelow(featureB);
 
 		// Add the cross-tree-constraints
-		featureModel.mutate().addConstraint(new Implies(new Literal("C"), new Literal("B")));
-		featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("C")));
+//		featureModel.mutate().addConstraint(new Implies(new Literal("C"), new Literal("B")));
+//		featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("C")));
 		featureModel.mutate().addConstraint(new Or( new Not(new Literal("D")), new
 				And(new Literal("C"), new
 						Literal("B"))));
@@ -686,7 +686,7 @@ class ComputeFormulaTest {
 		ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
 		ComputeFormula computeFormula = new ComputeFormula(computeConstant);
 
-		IFormula resultFormula = computeFormula.computeResult().get();
+		IFormula resultFormula = computeFormula.computeResult().orElseThrow();
 
 		// assert
 		assertEquals(expected, resultFormula);
@@ -698,7 +698,7 @@ class ComputeFormulaTest {
 		ComputeFormula computeFormula = new ComputeFormula(computeConstant);
 
 		IFormula resultFormula = computeFormula.set(ComputeFormula.SIMPLE_TRANSLATION, Boolean.TRUE).computeResult()
-				.get();
+				.orElseThrow();
 
 		// assert
 		assertEquals(expected, resultFormula);

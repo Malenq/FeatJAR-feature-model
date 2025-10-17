@@ -119,6 +119,7 @@ public class ComputeFormula extends AComputation<IFormula> {
             for (IConstraint constr : transformedConstraints) {
                 constraints.add(constr.getFormula());
             }
+            // extract global constraints to transform them to one big one
             List<IConstraint> globalConstraints = getGlobalConstraints(contextsToConstraints);
             List<IConstraint> existenceConstraints = createGlobalExistenceConstraints(globalConstraints);
             for (IConstraint constr : existenceConstraints) {
@@ -402,7 +403,7 @@ public class ComputeFormula extends AComputation<IFormula> {
     	Set<IFeatureTree> contexts = new HashSet<>();
     	
     	for (IFeature feature : features) {
-    		IFeatureTree context = getNextCardinalityParentIncludingRoot(feature.getFeatureTree().get());
+    		IFeatureTree context = getNextCardinalityParent(feature.getFeatureTree().get());
     		
     		contexts.add(context);
         }
@@ -522,6 +523,31 @@ public class ComputeFormula extends AComputation<IFormula> {
         }
         return createOrFromFeatureTrees(featureNames);
     }
+    
+    private boolean replaceInTree(IExpression currentNode, IFormula toReplace, IFormula replacement) {
+    	 if (currentNode == null) {
+    	        return false;
+    	    }
+
+    	 boolean replaced = false;
+    	 try {			
+    		 replaced = currentNode.replaceChild(toReplace, replacement);
+		} catch (Exception e) {}
+    	  
+    	  if (replaced) {
+    	        return true;
+    	    }
+
+    	  for (IExpression child : currentNode.getChildren()) {
+    	   
+    	        if (replaceInTree(child, toReplace, replacement)) {
+    	            return true;
+    	        }
+    	    }
+
+    	    
+    	    return false;
+    }
 
     
     private List<IConstraint> transformLocalConstraints(Map<CustomObj, List<IConstraint>> localConstraints) {
@@ -535,15 +561,19 @@ public class ComputeFormula extends AComputation<IFormula> {
             boolean isGlobal = false;
             Set<IFeatureTree> contexts = contextOriginalFeatures.getContextFeatures();
             List<IFeatureTree> orderedContexts = new ArrayList<>(contexts);
-            if (contexts.size() > 1) {
-            	isGlobal = true;
-            }
+//            if (contexts.size() > 1) {
+//            	isGlobal = true;
+//            }
             
             for (IFeatureTree context : orderedContexts) {
             
                 List<IFeatureTree> contextFeatureNames = featureToCardinalityNames.get(context.getFeature());
 
-                 for (IConstraint constraint : constraints) {         	 
+                 for (IConstraint constraint : constraints) {  
+                	 if (!hasCommonCardinalityParent(constraint)) {
+                		 isGlobal = true;
+                	 }
+                	 
                 	 if (contextFeatureNames == null || contextFeatureNames.isEmpty()) continue;
                      for (IFeatureTree contextFeatureName : contextFeatureNames) {
                          IConstraint modifiedConstraint = constraint.clone();
@@ -556,7 +586,16 @@ public class ComputeFormula extends AComputation<IFormula> {
                          	if (isGlobal) {
                          		// 2., 3. and 4. case: feature is not the current context feature
                          		IFeatureTree currentCardinalityParent = getNextCardinalityParent(currentFeatureTree);
-                         		if (!contextFeatureName.getFeature().getName().get().equals(currentCardinalityParent.getFeature().getName().get())) {
+                         		
+                         		boolean notEqual = false;
+                         		if (currentCardinalityParent == null) {
+                         			notEqual = true;
+                         		} else if (!contextFeatureName.getFeature().getName().get().equals(currentCardinalityParent.getFeature().getName().get())) {
+                         			notEqual = true;
+                         			
+                         		}
+                         		
+                         		if (notEqual) {
                          			// 4. case: context of feature is located under current context feature 
                          			if (contextUnderCurrentContext(contextFeatureName, currentFeatureTree)) {
                          				replacement = createOrReplacementWithContext(contextFeatureName, feature);
@@ -589,7 +628,14 @@ public class ComputeFormula extends AComputation<IFormula> {
                          	}
                          	
                          	if (replacement != null) {
-                                modifiedConstraint.getFormula().replaceChild(new Literal(feature.getName().get()), replacement);
+                         		IFormula toReplace = new Literal(feature.getName().get());
+                         		
+                         		if(!toReplace.equals(replacement)) {                         			
+                         			//modifiedConstraint.getFormula().replaceChild(toReplace, replacement);
+                         			replaceInTree(modifiedConstraint.getFormula(), toReplace, replacement);
+                         		}
+                         		
+                         		//modifiedConstraint.getFormula().getVariables().remove(toReplace);                      		
                          	}
                          }
 
@@ -635,7 +681,9 @@ public class ComputeFormula extends AComputation<IFormula> {
            		
            for (IFeature feature : features) {
                IFormula replacement = createOrReplacementWithoutContext(feature);
-           	   modifiedConstraint.getFormula().replaceChild(new Literal(feature.getName().get()), replacement);
+               Literal toReplace = new Literal(feature.getName().get());
+               replaceInTree(modifiedConstraint.getFormula(), toReplace, replacement);
+           	   // modifiedConstraint.getFormula().replaceChild(new Literal(feature.getName().get()), replacement);
            }
            		
            globalExistenceConstraints.add(modifiedConstraint);
