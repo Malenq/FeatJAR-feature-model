@@ -841,19 +841,19 @@ class ComputeFormulaTest {
 		IFormula resultFormula = computeFormula.computeResult().orElseThrow();
 
 		// not the same amount of constraints in both formulas
-		assertNotEquals(expected.getFirstChild().get().getChildrenCount(),
+		assertEquals(expected.getFirstChild().get().getChildrenCount(),
 				resultFormula.getFirstChild().get().getChildrenCount());
 
-		for (IExpression expr : resultFormula.getFirstChild().get().getChildren()) {
+		for (IExpression expr : expected.getFirstChild().get().getChildren()) {
 			try {
-				expected.getFirstChild().get().removeChild(expr);
+				resultFormula.getFirstChild().get().removeChild(expr);
 			} catch (Exception e) {
 				fail(e);
 			}
 		}
 
 		// assert
-		assertEquals(expected.getFirstChild().get().getChildrenCount(), 0);
+		assertEquals(resultFormula.getFirstChild().get().getChildrenCount(), 0);
 	}
 
 	private void executeSimpleTest() {
@@ -865,19 +865,18 @@ class ComputeFormulaTest {
 				.orElseThrow();
 
 		// not the same amount of constraints in both formulas
-		assertNotEquals(expected.getFirstChild().get().getChildrenCount(),
+		assertEquals(expected.getFirstChild().get().getChildrenCount(),
 				resultFormula.getFirstChild().get().getChildrenCount());
 
-		// TODO: exchange expected with result 
-		for (IExpression expr : resultFormula.getFirstChild().get().getChildren()) {
+		for (IExpression expr : expected.getFirstChild().get().getChildren()) {
 			try {
-				expected.getFirstChild().get().removeChild(expr);
+				resultFormula.getFirstChild().get().removeChild(expr);
 			} catch (Exception e) {
 				fail(e);
 			}
 		}
 
 		// assert
-		assertEquals(expected.getFirstChild().get().getChildrenCount(), 0);
+		assertEquals(resultFormula.getFirstChild().get().getChildrenCount(), 0);
 	}
 }
