@@ -25,7 +25,6 @@ import java.nio.file.Paths;
  */
 public class FeatureModelDisplayTikzTest {
 
-    private final StringBuilder stringBuilder = new StringBuilder();
     private static IFeatureModel featureModel;
 
     @BeforeAll
@@ -37,11 +36,21 @@ public class FeatureModelDisplayTikzTest {
         IFeature featureRootS = featureModel.mutate().addFeature("Hello");
         IFeature feature = featureModel.mutate().addFeature("Feature");
         IFeature world1 = featureModel.mutate().addFeature("World1");
+        world1.mutate().setAttributeValue(new Attribute<>("size", Double.class), 6000.0);
+        world1.mutate().setAttributeValue(new Attribute<>("population", Integer.class), 1);
         IFeature world2 = featureModel.mutate().addFeature("World2");
         IFeature wonderful1 = featureModel.mutate().addFeature("Wonderful1");
+        wonderful1.mutate().setAttributeValue(new Attribute<>("who", String.class), "you");
+        wonderful1.mutate().setAttributeValue(new Attribute<>( "when", String.class), "now");
         IFeature beautiful1 = featureModel.mutate().addFeature("Beautiful1");
         IFeature wonderful2 = featureModel.mutate().addFeature("Wonderful2");
         IFeature beautiful2 = featureModel.mutate().addFeature("Beautiful2");
+        IFeature wonderful3 = featureModel.mutate().addFeature("Wonderful3");
+        wonderful3.mutate().setAttributeValue(new Attribute<>("who", String.class), "you");
+        IFeature beautiful3 = featureModel.mutate().addFeature("Beautiful3");
+        IFeature meaningful1 = featureModel.mutate().addFeature("Meaningful1");
+        IFeature meaningful2 = featureModel.mutate().addFeature("Meaningful2");
+        IFeature meaningful3 = featureModel.mutate().addFeature("Meaningful3");
 
         featureRootS.mutate().setAbstract();
 
@@ -54,19 +63,22 @@ public class FeatureModelDisplayTikzTest {
         feature.mutate().setAbstract();
         int group1 = firstFeatureTree.mutate().addAlternativeGroup();
         int group2 = firstFeatureTree.mutate().addOrGroup();
-
-        Attribute<String> attribute = new Attribute<>("any", "test", String.class);
-        Attribute<String> attribute2 = new Attribute<>("anyd", "testd", String.class);
-        wonderful1.mutate().setAttributeValue(attribute, "value");
-        wonderful1.mutate().setAttributeValue(attribute2, "value2");
+        int group3 = firstFeatureTree.mutate().addCardinalityGroup(Range.of(7,8));
 
         firstFeatureTree.mutate().addFeatureBelow(wonderful1, 0, group1);
-
         firstFeatureTree.mutate().setFeatureCardinality(Range.of(0,2));
         firstFeatureTree.mutate().addFeatureBelow(beautiful1, 1, group1);
 
         firstFeatureTree.mutate().addFeatureBelow(wonderful2, 2, group2);
-        firstFeatureTree.mutate().addFeatureBelow(beautiful2, 3, group2);
+        IFeatureTree beautiful2FeatureTree = firstFeatureTree.mutate().addFeatureBelow(beautiful2, 3, group2);
+
+        int group4 = beautiful2FeatureTree.mutate().addCardinalityGroup(Range.of(0,2));
+        beautiful2FeatureTree.mutate().addFeatureBelow(meaningful1, 0, group4);
+        beautiful2FeatureTree.mutate().addFeatureBelow(meaningful2, 1, group4);
+        beautiful2FeatureTree.mutate().addFeatureBelow(meaningful3, 2, group4);
+
+        firstFeatureTree.mutate().addFeatureBelow(wonderful3, 4, group3);
+        firstFeatureTree.mutate().addFeatureBelow(beautiful3, 5, group3);
 
         rootTree.mutate().addFeatureBelow(world1);
 
@@ -74,8 +86,8 @@ public class FeatureModelDisplayTikzTest {
         world2FeatureTree.mutate().setFeatureCardinality(Range.of(1, 1));
 
         // Constraints
-        featureModel.addConstraint(new And(Expressions.literal("A"), Expressions.literal("B")));
-        featureModel.addConstraint(new Implies(Expressions.literal("C"), new ForAll(new Variable("A"), new BiImplies(Expressions.literal("A"), Expressions.literal("C")))));
+        featureModel.addConstraint(new And(Expressions.literal("World1"), Expressions.literal("Wonderful1")));
+        featureModel.addConstraint(new Implies(Expressions.literal("World2"), new BiImplies(Expressions.literal("Beautiful2"), Expressions.literal("Beautiful3"))));
 
         FeatureModelDisplayTikzTest.featureModel = featureModel;
     }
@@ -99,7 +111,7 @@ public class FeatureModelDisplayTikzTest {
     }
 
     // Todo: Add @Test here and remove the other @Test on the method perform
-    //@Test
+    // @Test
     public void createTestFile() {
         new TikzGraphicalFeatureModelFormat().serialize(featureModel).ifPresent(this::writeToFile);
     }
@@ -155,5 +167,4 @@ public class FeatureModelDisplayTikzTest {
 
         return stringBuilderFile;
     }
-
 }

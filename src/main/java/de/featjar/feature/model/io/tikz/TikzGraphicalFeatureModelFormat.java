@@ -28,15 +28,20 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
         StringBuilder stringBuilder = new StringBuilder();
         List<Problem> problemList = new ArrayList<>();
 
-        stringBuilder.append("\\documentclass[border=5pt]{standalone}");
-        stringBuilder.append(LINE_SEPERATOR);
+        stringBuilder.append("\\documentclass[border=5pt]{standalone}").append(LINE_SEPERATOR);
         TikzHeadFormat.header(stringBuilder, problemList, false);
-        stringBuilder.append("\\begin{document}").append(LINE_SEPERATOR).append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
+
+        stringBuilder
+                .append("\\begin{document}").append(LINE_SEPERATOR)
+                .append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
         for (IFeatureTree featureTree : featureModel.getRoots()) {
             new TikzMainFormat(featureModel, featureTree, stringBuilder).printForest();
         }
-        stringBuilder.append(LINE_SEPERATOR);
-        stringBuilder.append("\t%---------------------------------------------------------------------------").append(LINE_SEPERATOR).append("\\end{document}");
+        stringBuilder
+                .append(LINE_SEPERATOR)
+                .append("\t%---------------------------------------------------------------------------").append(LINE_SEPERATOR)
+                .append("\\end{document}");
+
         return Result.of(stringBuilder.toString(), problemList);
     }
 
