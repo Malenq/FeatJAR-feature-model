@@ -54,7 +54,9 @@ public class TikzMainFormat {
         if (!featureTree.getFeature().isHidden()) {
             printLegend();
         }
-        printConstraints();
+        if(!featureModel.getConstraints().isEmpty()) {
+            printConstraints();
+        }
         stringBuilder.append("\\end{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
     }
 
