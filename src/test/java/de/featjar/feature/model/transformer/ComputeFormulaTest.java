@@ -553,10 +553,14 @@ class ComputeFormulaTest {
 				new Implies(new Literal("C.A_2"), new Literal("A_2")),
 				new Implies(new Literal("B.A_2"), new Literal("A_2")),
 				new Implies(new Literal("D"), new Literal("root")),
-				new Implies(new Literal("A_1"), new Implies(new Literal("C.A_1"), new Literal("B.A_1"))),
-				new Implies(new Literal("A_2"), new Implies(new Literal("C.A_2"), new Literal("B.A_2"))),
-				new Implies(new Literal("A_1"), new Implies(new Literal("B.A_1"), new Literal("C.A_1"))),
-				new Implies(new Literal("A_2"), new Implies(new Literal("B.A_2"), new Literal("C.A_2")))));
+				new Implies(new Literal("A_1"), new Or(new Not(new Literal("D")), 
+						new And(new Literal("C.A_1"), new Literal("B.A_1")))),
+				new Implies(new Literal("A_2"), new Or(new Not(new Literal("D")), 
+						new And(new Literal("C.A_2"), new Literal("B.A_2")))),
+				new Or(new Not(new Literal("D")), new And(new Or(new Literal("C.A_1"), new Literal("C.A_2")),
+						new Or(new Literal("B.A_1"), new Literal("B.A_2"))))
+				
+				));
 
 		executeTest();
 	}
