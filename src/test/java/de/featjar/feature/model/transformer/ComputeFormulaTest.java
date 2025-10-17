@@ -828,10 +828,10 @@ class ComputeFormulaTest {
 		IFormula resultFormula = computeFormula.computeResult().orElseThrow();
 
 		// not the same amount of constraints in both formulas
-//		if (expected.getFirstChild().get().getChildrenCount() != resultFormula.getFirstChild().get()
-//				.getChildrenCount()) {
-//			fail();
-//		}
+		if (expected.getFirstChild().get().getChildrenCount() != resultFormula.getFirstChild().get()
+				.getChildrenCount()) {
+			fail();
+		}
 
 		for (IExpression expr : resultFormula.getFirstChild().get().getChildren()) {
 			try {
