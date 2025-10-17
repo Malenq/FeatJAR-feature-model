@@ -34,7 +34,9 @@ public class TikzMainFormat {
      * Build the complete tree of the FeatureModel.
      */
     public void printForest() {
-        stringBuilder.append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
+        stringBuilder
+                .append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR)
+                .append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
 
         PrintVisitor printVisitor = new PrintVisitor();
         Trees.traverse(featureTree, printVisitor);

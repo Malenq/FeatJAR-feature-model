@@ -29,23 +29,14 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
 
         new TikzAttributeHelper(feature, stringBuilder)
                 .addFilterValue("name")
-                .setFilterType(TikzAttributeHelper.FilterType.DISPLAY)
+                .addFilterValue("abstract")
+                .setFilterType(TikzAttributeHelper.FilterType.WITH_OUT)
                 .build();
-        insertNodeHead(feature);
-        handleGroups(feature);
+        insertFeatureType(feature);
+        insertFeatureCardinality(feature);
+        insertGroupCardinality(feature);
+
         return TraversalAction.CONTINUE;
-    }
-
-    private void handleGroups(IFeature feature) {
-        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
-        if (featureTree == null) {
-            return;
-        }
-
-        featureTree.getChildren().forEach(featureStream -> {
-           FeatJAR.log().info(feature.getName().get() + " - " + featureStream.getFeature().getName().get());
-        });
-
     }
 
     @Override
@@ -59,10 +50,7 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
         return Result.of(stringBuilder.toString());
     }
 
-    private void insertNodeHead(IFeature feature) {
-        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
-        FeatureTree.Group featureTreeParentGroup = feature.getFeatureTree().get().getParentGroup().orElse(null);
-
+    private void insertFeatureType(IFeature feature) {
         if (feature.isAbstract()) {
             stringBuilder.append(",abstract");
         }
@@ -70,6 +58,11 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
         if (feature.isConcrete()) {
             stringBuilder.append(",concrete");
         }
+    }
+
+    private void insertFeatureCardinality(IFeature feature) {
+        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
+        FeatureTree.Group featureTreeParentGroup = feature.getFeatureTree().get().getParentGroup().orElse(null);
 
         if (isNotRootFeature(feature) && featureTreeParentGroup != null && featureTreeParentGroup.isAnd()) {
             if (featureTree.getFeatureCardinalityLowerBound() == 0 &&
@@ -84,25 +77,30 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
                         feature.getFeatureTree().get().getFeatureCardinalityUpperBound()));
             }
         }
+    }
+
+    private void insertGroupCardinality(IFeature feature) {
+        IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
 
         if (isNotRootFeature(feature)) {
-            int previousChildrenCount = 0;
+            int previousChildrenCount = 1;
             for(int i = 0; i < featureTree.getChildrenGroups().size(); i++) {
                 if(featureTree.getChildrenGroup(i).isPresent()) {
                     FeatureTree.Group group = featureTree.getChildrenGroup(i).get();
 
+                    int childrenCount = featureTree.getChildren(i).size();
                     if(group.isOr()) {
-                        stringBuilder.append(String.format(",or={%d}{%d}", previousChildrenCount + 1,
-                                featureTree.getChildren(i).size()));
+                        stringBuilder.append(String.format(",or={%d}{%d}{%d}", previousChildrenCount, previousChildrenCount + childrenCount - 1,
+                                (2 * previousChildrenCount + childrenCount - 1) / 2));
                     } else if(group.isAlternative()) {
-                        stringBuilder.append(String.format(",alternative={%d}{%d}", previousChildrenCount + 1,
-                                featureTree.getChildren(i).size()));
+                        stringBuilder.append(String.format(",alternative={%d}{%d}{%d}", previousChildrenCount, previousChildrenCount + childrenCount - 1,
+                                (2 * previousChildrenCount + childrenCount - 1) / 2));
                     } else if(group.isCardinalityGroup()) {
-                        stringBuilder.append(String.format(",groupcardinality={%d}{%d}", previousChildrenCount + 1,
-                                featureTree.getChildren(i).size()));
+                        stringBuilder.append(String.format(",groupcardinality={%d}{%d}{%d}{%d}{%d}", previousChildrenCount, previousChildrenCount + childrenCount - 1,
+                                (2 * previousChildrenCount + childrenCount - 1) / 2, group.getLowerBound(), group.getUpperBound()));
                     }
 
-                    previousChildrenCount += featureTree.getChildren(i).size();
+                    previousChildrenCount += childrenCount;
                 }
             }
         }

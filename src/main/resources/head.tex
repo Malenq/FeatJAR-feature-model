@@ -4,11 +4,8 @@
 \usepackage{xcolor}
 \usetikzlibrary{angles}
 \usetikzlibrary{positioning}
-\usetikzlibrary{quotes}
 \definecolor{drawColor}{RGB}{128 128 128}
 \newcommand{\circleSize}{0.25em}
-\newcommand{\angleSize}{0.8em}
-\newcommand{\angleSizeCardinalityGroup}{1.0em}
 %-------------------------------------------------------------------------------
 %---Define the style of the tree------------------------------------------------
 \forestset{
@@ -34,46 +31,6 @@
             s sep = 1em,
         }
     },
-    /tikz/redColor/.style={
-        fill = red!60,
-        draw = drawColor
-    },
-    /tikz/orangeColor/.style={
-        fill = orange!50,
-        draw = drawColor
-    },
-    /tikz/yellowColor/.style={
-        fill = yellow!50,
-        draw = drawColor
-    },
-    /tikz/darkGreenColor/.style={
-        fill = black!30!green,
-        draw = drawColor
-    },
-    /tikz/lightGreenColor/.style={
-        fill = green!30,
-        draw = drawColor
-    },
-    /tikz/cyanColor/.style={
-        fill = cyan!30,
-        draw = drawColor
-    },
-    /tikz/lightGrayColor/.style={
-        fill = black!10,
-        draw = drawColor
-    },
-    /tikz/blueColor/.style={
-        fill = blue!50,
-        draw = drawColor
-    },
-    /tikz/magentaColor/.style={
-        fill = magenta,
-        draw = drawColor
-    },
-    /tikz/pinkColor/.style={
-        fill = pink!90,
-        draw = drawColor
-    },
     /tikz/abstract/.style={
         fill = blue!85!cyan!5,
         draw = drawColor
@@ -83,40 +40,60 @@
         draw = drawColor
     },
     mandatory/.style={
-        edge label+={node [mandatory] {} }
+        edge label+={
+            node [mandatory] {}
+        }
     },
     optional/.style={
-        edge label+={node [optional] {} }
-    },
-    featurecardinality/.style 2 args={
-        edge label+={node[midway,fill=white,font=\scriptsize]{#1,#2}}
-    },
-    or/.style={
-        tikz+={
-            \path (!c1.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!cl.parent) coordinate (C) pic[fill=drawColor, angle radius=\angleSize]{angle};
+        edge label+={
+            node [optional] {}
         }
     },
-    alternative/.style={
-        tikz+={
-            \path (!c1.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!cl.parent) coordinate (C) pic[draw=drawColor, angle radius=\angleSize]{angle};
+    featurecardinality/.style n args={2}{
+        edge label+={
+            node[midway,fill=white,font=\scriptsize]{#1,#2}
         }
     },
-    groupcardinality/.style n args={4}{
+    or/.style n args={3}{
         tikz+={
-			\path (!{current, n=#1}.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!{current, n=#2}.parent) coordinate (C) pic[
-			draw=drawColor,
-			angle radius=7em,
-			pic text={#3,#4},
-			pic text options={
-				scale=0.6,
-				fill=white,
-				inner sep=0.5pt
-			}
-			]{angle}
+            \path
+            (!{current, n=#1}.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!{current, n=#2}.parent) coordinate (C) -- (!{current, n=#3}.parent) coordinate (D)
+            let \p1 = (A), \p2 = (B), \p3 = (C), \p4 = (D), \n1 = {veclen(\x2 - \x1, \y2 - \y1)}, \n2 = {veclen(\x2 - \x3, \y2 - \y3)}, \n3 = {veclen(\x2 - \x4, \y2 - \y4)}
+            in pic[
+            fill=drawColor,
+            angle radius={min(\n1/2,\n2/2,\n3/2)}
+            ]{angle};
+        }
+    },
+    alternative/.style n args={3}{
+        tikz+={
+            \path
+            (!{current, n=#1}.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!{current, n=#2}.parent) coordinate (C) -- (!{current, n=#3}.parent) coordinate (D)
+            let \p1 = (A), \p2 = (B), \p3 = (C), \p4 = (D), \n1 = {veclen(\x2 - \x1, \y2 - \y1)}, \n2 = {veclen(\x2 - \x3, \y2 - \y3)}, \n3 = {veclen(\x2 - \x4, \y2 - \y4)}
+            in pic[
+            draw=drawColor,
+            angle radius={min(\n1/2,\n2/2,\n3/2)}
+            ]{angle};
+        }
+    },
+    groupcardinality/.style n args={5}{
+        tikz+={
+            \path (!{current, n=#1}.parent) coordinate (A) -- (!c.children) coordinate (B) -- (!{current, n=#2}.parent) coordinate (C) -- (!{current, n=#3}.parent) coordinate (D)
+            let \p1 = (A), \p2 = (B), \p3 = (C), \p4 = (D), \n1 = {veclen(\x2 - \x1, \y2 - \y1)}, \n2 = {veclen(\x2 - \x3, \y2 - \y3)}, \n3 = {veclen(\x2 - \x4, \y2 - \y4)}
+            in pic[
+            draw=drawColor,
+            angle radius={min(\n1/2,\n2/2,\n3/2)},
+            pic text={#4,#5},
+            pic text options={
+                scale=0.6,
+                fill=white,
+                inner sep=0.3pt
+            }
+            ]{angle};
         }
     },
     /tikz/placeholder/.style={
-        },
+    },
     collapsed/.style={
         rounded corners,
         no edge,
@@ -134,6 +111,6 @@
         minimum size = 1.2em,
         minimum width = 0.8em,
         scale=0.9
-    },
+    }
 }
 %-------------------------------------------------------------------------------
