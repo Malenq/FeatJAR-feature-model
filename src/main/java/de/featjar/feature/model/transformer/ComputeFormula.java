@@ -210,8 +210,9 @@ public class ComputeFormula extends AComputation<IFormula> {
                 }
 
                 // check if 0 and do not add implication
-                if (lowerBound != 0)
+                if (lowerBound != 0) {
                     constraints.add(new Implies(parentLiteral, new AtLeast(lowerBound, constraintGroupLiterals)));
+                }
 
             } else {
                 // handling of features that do not have a cardinality
