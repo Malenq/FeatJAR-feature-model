@@ -23,9 +23,19 @@ package de.featjar.feature.model.transformer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.Arrays;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import de.featjar.base.FeatJAR;
 import de.featjar.base.computation.ComputeConstant;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
+import de.featjar.base.tree.Trees;
+import de.featjar.base.tree.visitor.TreePrinter;
 import de.featjar.feature.model.FeatureModel;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
@@ -40,9 +50,7 @@ import de.featjar.formula.structure.connective.Not;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.Literal;
-import java.util.Arrays;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import de.featjar.formula.structure.term.value.Variable;
 
 /**
  *
@@ -58,6 +66,16 @@ import org.junit.jupiter.api.Test;
 class ComputeFormulaTest {
     private IFeatureModel featureModel;
     private IFormula expected;
+    
+    @BeforeAll
+    public static void init() {
+        FeatJAR.defaultConfiguration().initialize();
+     }
+    
+    @AfterAll
+    public static void deinit() {
+        FeatJAR.deinitialize();
+     }
 
     @BeforeEach
     public void createFeatureModel() {
@@ -970,6 +988,12 @@ class ComputeFormulaTest {
                 expected.getFirstChild().get().getChildrenCount(),
                 resultFormula.getFirstChild().get().getChildrenCount());
 
+        TreePrinter visitor = new TreePrinter();
+        visitor.setFilter(n -> !(n instanceof Variable));
+		FeatJAR.log().message(Trees.traverse(resultFormula, visitor));
+        FeatJAR.log().message(resultFormula.print());
+       
+        
         for (IExpression expr : expected.getFirstChild().get().getChildren()) {
             try {
                 resultFormula.getFirstChild().get().removeChild(expr);
@@ -980,6 +1004,7 @@ class ComputeFormulaTest {
 
         // assert
         assertEquals(resultFormula.getFirstChild().get().getChildrenCount(), 0);
+        
     }
 
     private void executeSimpleTest() {
