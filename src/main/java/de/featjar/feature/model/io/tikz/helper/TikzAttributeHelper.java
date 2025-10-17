@@ -54,8 +54,8 @@ public class TikzAttributeHelper {
      * @param values (the keys, words or whatever that will be filtered in the running process.
      * @return this
      */
-    public TikzAttributeHelper addFilterValue(String... values) {
-        filter.addAll(List.of(values));
+    public TikzAttributeHelper addFilterValue(List<String> values) {
+        filter.addAll(values);
         return this;
     }
 
@@ -65,7 +65,7 @@ public class TikzAttributeHelper {
 
         Map<IAttribute<?>, Object> iAttributeObjectMap = feature.getAttributes().orElse(null);
         // check: if the attribute map is empty or null
-        if (iAttributeObjectMap == null || iAttributeObjectMap.isEmpty()) {
+        if (iAttributeObjectMap == null || iAttributeObjectMap.isEmpty() || countAttributeToDisplay(iAttributeObjectMap) == 0) {
             stringBuilder.append("[").append(featureName); // add the name without multicolumn
             return;
         }
@@ -86,6 +86,22 @@ public class TikzAttributeHelper {
         }
         stringBuilder.append(replace(VALUE, attribute.getName(), attribute.getType().getSimpleName(), object));
         replace(VALUE, 12, 2);
+    }
+
+    /**
+     * Count all items to display in the feature for more functions and more beauty
+     *
+     * @param values (Map of the feature with his attributes)
+     * @return count if items to diplay
+     */
+    private int countAttributeToDisplay(Map<IAttribute<?>, Object> values) {
+        int size = values.size();
+        for (IAttribute<?> attribute : values.keySet()) {
+            if (filterWithType(attribute.getName().toUpperCase())) {
+                size-=1;
+            }
+        }
+        return size;
     }
 
     private String replace(String key, Object... values) {

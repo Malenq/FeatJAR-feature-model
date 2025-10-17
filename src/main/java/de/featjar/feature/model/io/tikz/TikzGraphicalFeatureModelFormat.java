@@ -7,6 +7,7 @@ import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.format.TikzHeadFormat;
 import de.featjar.feature.model.io.tikz.format.TikzMainFormat;
+import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,16 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
 
     public static String LINE_SEPERATOR  = System.lineSeparator();
 
+    private TikzAttributeHelper.FilterType filterType = TikzAttributeHelper.FilterType.WITH_OUT; // default
+    private List<String> filterValues = new ArrayList<>(); // default
+
+    public TikzGraphicalFeatureModelFormat() {} // default
+
+    public TikzGraphicalFeatureModelFormat(TikzAttributeHelper.FilterType filterType, List<String> filterValues) {
+        this.filterType = filterType;
+        this.filterValues = filterValues;
+    }
+
     @Override
     public Result<String> serialize(IFeatureModel featureModel) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -35,7 +46,7 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
                 .append("\\begin{document}").append(LINE_SEPERATOR)
                 .append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
         for (IFeatureTree featureTree : featureModel.getRoots()) {
-            new TikzMainFormat(featureModel, featureTree, stringBuilder).printForest();
+            new TikzMainFormat(featureModel, featureTree, stringBuilder, filterType, filterValues).printForest();
         }
         stringBuilder
                 .append(LINE_SEPERATOR)
@@ -43,6 +54,14 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
                 .append("\\end{document}");
 
         return Result.of(stringBuilder.toString(), problemList);
+    }
+
+    public void setFilterType(TikzAttributeHelper.FilterType filterType) {
+        this.filterType = filterType;
+    }
+
+    public void setFilterValues(List<String> filterValues) {
+        this.filterValues = filterValues;
     }
 
     @Override

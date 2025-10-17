@@ -6,6 +6,7 @@ import de.featjar.base.tree.visitor.ITreeVisitor;
 import de.featjar.feature.model.FeatureTree;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,8 +20,19 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
 
     private final StringBuilder stringBuilder;
 
+    private final TikzAttributeHelper.FilterType filterType;
+    private final List<String> filterValues;
+
     public PrintVisitor() {
         this.stringBuilder = new StringBuilder();
+        this.filterType = TikzAttributeHelper.FilterType.WITH_OUT; // default
+        this.filterValues = new ArrayList<>();
+    }
+
+    public PrintVisitor(TikzAttributeHelper.FilterType filterType, List<String> filterValues) {
+        this.stringBuilder = new StringBuilder();
+        this.filterType = filterType;
+        this.filterValues = filterValues;
     }
 
     @Override
@@ -28,9 +40,8 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
         IFeature feature = ITreeVisitor.getCurrentNode(path).getFeature();
 
         new TikzAttributeHelper(feature, stringBuilder)
-                .addFilterValue("name")
-                .addFilterValue("abstract")
-                .setFilterType(TikzAttributeHelper.FilterType.WITH_OUT)
+                .addFilterValue(filterValues)
+                .setFilterType(filterType)
                 .build();
         insertFeatureType(feature);
         insertFeatureCardinality(feature);

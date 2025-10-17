@@ -5,11 +5,14 @@ import de.featjar.feature.model.IConstraint;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
+import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
 import de.featjar.feature.model.io.tikz.helper.TikzMatrixHelper;
 import de.featjar.feature.model.io.tikz.helper.TikzMatrixType;
 import de.featjar.feature.model.io.tikz.helper.PrintVisitor;
 import de.featjar.formula.io.textual.ExpressionSerializer;
 import de.featjar.formula.io.textual.LaTexSymbols;
+
+import java.util.List;
 
 /**
  * This class generates the Tikz representation of a {@link IFeatureModel} including all constraints ({@link IConstraint}).
@@ -23,11 +26,15 @@ public class TikzMainFormat {
     private final IFeatureModel featureModel;
     private final IFeatureTree featureTree;
     private final StringBuilder stringBuilder;
+    private final TikzAttributeHelper.FilterType filterType;
+    private final List<String> filterValues;
 
-    public TikzMainFormat(IFeatureModel featureModel ,IFeatureTree featureTree, StringBuilder stringBuilder) {
+    public TikzMainFormat(IFeatureModel featureModel , IFeatureTree featureTree, StringBuilder stringBuilder, TikzAttributeHelper.FilterType filterType, List<String> filterValues) {
         this.featureModel = featureModel;
         this.featureTree = featureTree;
         this.stringBuilder = stringBuilder;
+        this.filterType = filterType;
+        this.filterValues = filterValues;
     }
 
     /**
@@ -38,7 +45,7 @@ public class TikzMainFormat {
                 .append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR)
                 .append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
 
-        PrintVisitor printVisitor = new PrintVisitor();
+        PrintVisitor printVisitor = new PrintVisitor(filterType, filterValues);
         Trees.traverse(featureTree, printVisitor);
         stringBuilder.append(printVisitor.getResult().get());
 
