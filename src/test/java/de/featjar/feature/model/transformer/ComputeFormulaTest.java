@@ -595,7 +595,55 @@ class ComputeFormulaTest {
 		featureModel.mutate().addConstraint(new Implies(new Literal("A"), new Literal("E")));
 		featureModel.mutate().addConstraint(new Implies(new Literal("E"), new And(new Literal("B"), new Literal("C"))));
 		featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("D")));
+		
+		
+		expected = new Reference(new And(
+			    new Literal("root"),
+			    new Implies(new Literal("A_1"), new Literal("root")),
+			    new Implies(new Literal("D_1.B.A_1"), new Literal("B.A_1")),
+			    new Implies(new Literal("D_2.B.A_1"), new Literal("B.A_1")),
+			    new Implies(new Literal("D_2.B.A_1"), new Literal("D_1.B.A_1")),
+			    new Implies(new Literal("C.A_1"), new Literal("A_1")),
+			    
+			    
+			    new Implies(new Literal("A_2"), new Literal("root")),
+			    new Implies(new Literal("A_2"), new Literal("A_1")),
+			    new Implies(new Literal("B.A_2"), new Literal("A_2")),
+			    new Implies(new Literal("D_1.B.A_2"), new Literal("B.A_2")),
+			    new Implies(new Literal("D_2.B.A_2"), new Literal("B.A_2")),
+			    new Implies(new Literal("D_2.B.A_2"), new Literal("D_1.B.A_2")),
+			    new Implies(new Literal("C.A_2"), new Literal("A_2")),
+			    
+			    new Implies(new Literal("E_1"), new Literal("root")),
+			    new Implies(new Literal("E_2"), new Literal("root")),
+			    new Implies(new Literal("E_2"), new Literal("E_1")),
+			    new Implies(new Literal("F"), new Literal("root")),
+			    new Implies(new Literal("E_1"),new Implies( new Or(new Literal("A_1"), new Literal("A_2")),new Literal("E_1") )),
+			    new Implies(new Literal("E_2"),new Implies(new Or(new Literal("A_1"), new Literal("A_2")),new Literal("E_2"))),
+			    new Implies(new Literal("E_1"), new Implies(new Literal("E_1"),new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("C.A_1"), new Literal("C.A_2"))))),
+			    new Implies(new Literal("E_2"),new Implies(new Literal("E_2"), new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("C.A_1"), new Literal("C.A_2"))))),
+			    
+			    
+			    new Implies(new Literal("A_1"),new Implies(new Literal("A_1"),new Or(new Literal("E_1"), new Literal("E_2")))),
+			    new Implies(new Literal("A_2"),new Implies(new Literal("A_2"),new Or(new Literal("E_1"), new Literal("E_2")))),
+			    new Implies(new Literal("A_1"), new Implies(new Or(new Literal("E_1"), new Literal("E_2")), new And(new Literal("B.A_1"), new Literal("C.A_1")))),
+			    new Implies(new Literal("A_2"), new Implies(new Or(new Literal("E_1"), new Literal("E_2")), new And(new Literal("B.A_2"), new Literal("C.A_2")))),
+			    new Implies(new Literal("A_1"), new Implies(new Literal("B.A_1"), new Or(new Literal("D_1.B.A_1"), new Literal("D_2.B.A_1")))),
+			    new Implies(new Literal("A_2"), new Implies(new Literal("B.A_2"), new Or(new Literal("D_1.B.A_2"), new Literal("D_2.B.A_2")))),
+		        
 
+			    new Implies(new Literal("D_1.B.A_1"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_1.B.A_1") )),
+			    new Implies(new Literal("D_2.B.A_1"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_2.B.A_1") )),
+			    new Implies(new Literal("D_1.B.A_2"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_1.B.A_2") )),
+			    new Implies(new Literal("D_2.B.A_2"),new Implies( new Or(new Literal("B.A_1"), new Literal("B.A_2")),new Literal("D_2.B.A_2") )),
+			    
+			    
+			    new Implies(new Literal("A_1"), new Implies(new Literal("F"), new And(new Literal("B.A_1"), new Literal("C.A_1")))),
+			    new Implies(new Literal("A_2"), new Implies(new Literal("F"), new And(new Literal("B.A_2"), new Literal("C.A_2")))),
+			    new Implies(new Or(new Literal("A_1"), new Literal("A_2")), new Or(new Literal("E_1"), new Literal("E_2"))),
+			    
+			    new Implies(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("D_1.B.A_1"), new Literal("D_2.B.A_1"), new Literal("D_1.B.A_2"), new Literal("D_2.B.A_2"))),
+			    new Implies(new Literal("F"), new And(new Or(new Literal("B.A_1"), new Literal("B.A_2")), new Or(new Literal("C.A_1"), new Literal("C.A_2")))))); 
 		executeTest();
 	}
 
