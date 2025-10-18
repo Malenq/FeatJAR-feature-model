@@ -30,11 +30,8 @@ import de.featjar.base.data.IAttribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.Trees;
+import de.featjar.feature.model.*;
 import de.featjar.feature.model.FeatureTree.Group;
-import de.featjar.feature.model.IConstraint;
-import de.featjar.feature.model.IFeature;
-import de.featjar.feature.model.IFeatureModel;
-import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.IExpression;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.connective.And;
@@ -81,7 +78,7 @@ public class ComputeFormula extends AComputation<IFormula> {
         IFeatureModel featureModel = FEATURE_MODEL.get(dependencyList);
         ArrayList<IFormula> constraints = new ArrayList<>();
         HashSet<Variable> variables = new HashSet<>();
-        Map<Variable, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
+        Map<IFormula, Map<IAttribute<?>, Object>> attributes = new LinkedHashMap<>();
 
         IFeatureTree iFeatureTree = featureModel.getRoots().get(0);
         Collection<IConstraint> crossTreeConstr = featureModel.getConstraints();
@@ -136,7 +133,10 @@ public class ComputeFormula extends AComputation<IFormula> {
      * @param variables
      */
     private void createTreeConstraints(
-            IFeatureModel featureModel, ArrayList<IFormula> constraints, HashSet<Variable> variables, Map<Variable, Map<IAttribute<?>, Object>> attributes) {
+            IFeatureModel featureModel,
+            ArrayList<IFormula> constraints,
+            HashSet<Variable> variables,
+            Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
 
         for (IFeatureTree root : featureModel.getRoots()) {
 
@@ -145,10 +145,11 @@ public class ComputeFormula extends AComputation<IFormula> {
                     root.getFeature().getName().get(), root.getFeature().getType());
             variables.add(variable);
             if (root.getFeature().getAttributes().isPresent()) {
-                attributes.put(variable, root.getFeature().getAttributes().get());
+                attributes.put(Features.createFeatureFormula(root.getFeature()),
+                        root.getFeature().getAttributes().get());
             }
 
-            Literal rootLiteral = new Literal(root.getFeature().getName().orElse(""));
+            IFormula rootLiteral = Features.createFeatureFormula(root.getFeature());
             if (root.isMandatory()) {
                 constraints.add(rootLiteral);
             }
@@ -168,17 +169,17 @@ public class ComputeFormula extends AComputation<IFormula> {
     private void addChildConstraints(IFeatureTree node,
                                      ArrayList<IFormula> constraints,
                                      HashSet<Variable> variables,
-                                     Map<Variable, Map<IAttribute<?>, Object>> attributes) {
+                                     Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
         // collect the attributes of all features
         // TODO: check if the variables need to be duplicated?
         Variable variable = new Variable(
                 node.getFeature().getName().get(), node.getFeature().getType());
         variables.add(variable);
         if (node.getFeature().getAttributes().isPresent()) {
-            attributes.put(variable, node.getFeature().getAttributes().get());
+            attributes.put(Features.createFeatureFormula(node.getFeature()), node.getFeature().getAttributes().get());
         }
 
-        Literal parentLiteral = new Literal(getLiteralName(node));
+        IFormula parentLiteral = Features.createFeatureFormula(node.getFeature(), getLiteralName(node));
 
         featureToChildren.computeIfAbsent(node, k -> new HashMap<>());
 
@@ -193,7 +194,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                 int upperBound = child.getFeatureCardinalityUpperBound();
                 int lowerBound = child.getFeatureCardinalityLowerBound();
 
-                LinkedList<Literal> constraintGroupLiterals = new LinkedList<Literal>();
+                LinkedList<IFormula> constraintGroupLiterals = new LinkedList<>();
 
                 for (int i = 1; i <= upperBound; i++) {
 
@@ -206,7 +207,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                     IFeatureTree cardinalityClone = child.cloneTree();
                     cardinalityClone.mutate().setAttributeValue(literalNameAttribute, literalName);
 
-                    Literal currentLiteral = new Literal(literalName);
+                    IFormula currentLiteral = Features.createFeatureFormula(child.getFeature(), literalName);
 
                     Map<IFeature, List<IFeatureTree>> childrenOfNode =
                             featureToChildren.computeIfAbsent(node, k -> new HashMap<>());
@@ -222,7 +223,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                     constraints.add(new Implies(currentLiteral, parentLiteral));
                     // implication chain to force selection order for multiple of same feature
                     if (i > 1) {
-                        Literal previousLiteral = constraintGroupLiterals.getLast();
+                        IFormula previousLiteral = constraintGroupLiterals.getLast();
                         constraints.add(new Implies(currentLiteral, previousLiteral));
                     }
                     // group constraints
@@ -246,7 +247,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                     literalName += "." + getLiteralName(node);
                 }
 
-                Literal childFeatureLiteral = new Literal(literalName);
+                IFormula childFeatureLiteral = Features.createFeatureFormula(child.getFeature(), literalName);
                 child.mutate().setAttributeValue(literalNameAttribute, literalName);
 
                 Map<IFeature, List<IFeatureTree>> childrenOfNode =
@@ -327,7 +328,7 @@ public class ComputeFormula extends AComputation<IFormula> {
      * @param constraints    list of constraints to add generated group constraints
      *                       to
      */
-    private void handleGroups(Literal featureLiteral, IFeatureTree node, ArrayList<IFormula> constraints) {
+    private void handleGroups(IFormula featureLiteral, IFeatureTree node, ArrayList<IFormula> constraints) {
         List<Group> childrenGroups = node.getChildrenGroups();
         int groupCount = childrenGroups.size();
         ArrayList<List<IFormula>> groupLiterals = new ArrayList<>(groupCount);
@@ -341,7 +342,7 @@ public class ComputeFormula extends AComputation<IFormula> {
             if (childNode.getAttributeValue(literalNameAttribute).isEmpty() && cardinalityFeatureAbove(childNode))
                 childLiteralName += "." + getLiteralName(node);
 
-            Literal childLiteral = new Literal(childLiteralName);
+            IFormula childLiteral = Features.createFeatureFormula(childNode.getFeature(), childLiteralName);
 
             if (childNode.isMandatory()) {
                 constraints.add(new Implies(featureLiteral, childLiteral));
@@ -491,7 +492,7 @@ public class ComputeFormula extends AComputation<IFormula> {
                                     List<IFeatureTree> contextualFeatureName =
                                             findContextualFeatureNames(contextFeatureName, feature);
                                     if (contextualFeatureName != null && !contextualFeatureName.isEmpty()) {
-                                        replacement = new Literal(contextualFeatureName
+                                        replacement = Features.createFeatureFormula(feature, contextualFeatureName
                                                 .get(0)
                                                 .getAttributeValue(literalNameAttribute)
                                                 .orElse(contextualFeatureName
@@ -501,14 +502,14 @@ public class ComputeFormula extends AComputation<IFormula> {
                                                         .orElse("")));
                                     } else {
                                         replacement =
-                                                new Literal(feature.getName().orElse(""));
+                                                Features.createFeatureFormula(feature);
                                     }
                                 }
                             } else {
                                 List<IFeatureTree> contextualFeatureName =
                                         findContextualFeatureNames(contextFeatureName, feature);
                                 if (contextualFeatureName != null && !contextualFeatureName.isEmpty()) {
-                                    replacement = new Literal(contextualFeatureName
+                                    replacement = Features.createFeatureFormula(feature, contextualFeatureName
                                             .get(0)
                                             .getAttributeValue(literalNameAttribute)
                                             .orElse(contextualFeatureName
@@ -517,13 +518,13 @@ public class ComputeFormula extends AComputation<IFormula> {
                                                     .getName()
                                                     .orElse("")));
                                 } else {
-                                    replacement = new Literal(feature.getName().orElse(""));
+                                    replacement = Features.createFeatureFormula(feature);
                                 }
                             }
 
                             if (replacement != null) {
                                 IFormula toReplace =
-                                        new Literal(feature.getName().get());
+                                        Features.createFeatureFormula(feature);
 
                                 if (!toReplace.equals(replacement)) {
                                     replaceInTree(modifiedConstraint.getFormula(), toReplace, replacement);
@@ -533,7 +534,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 
                         IFormula formula = modifiedConstraint.getFormula();
                         IFormula contextFormula = new Implies(
-                                new Literal(contextFeatureName
+                                Features.createFeatureFormula(contextFeatureName.getFeature(), contextFeatureName
                                         .getAttributeValue(literalNameAttribute)
                                         .orElse("")),
                                 formula);
@@ -677,7 +678,7 @@ public class ComputeFormula extends AComputation<IFormula> {
     private IFormula createOrReplacementWithContext(IFeatureTree currentContext, IFeature feature) {
         List<IFeatureTree> contextualFeatureNames = findContextualFeatureNames(currentContext, feature);
         if (contextualFeatureNames == null || contextualFeatureNames.isEmpty()) {
-            return new Literal(feature.getName().orElse("")); // fallback to plain feature
+            return Features.createFeatureFormula(feature); // fallback to plain feature
         }
         return createOrFromFeatureTrees(contextualFeatureNames);
     }
@@ -692,7 +693,7 @@ public class ComputeFormula extends AComputation<IFormula> {
     private IFormula createOrReplacementWithoutContext(IFeature feature) {
         List<IFeatureTree> featureNames = featureToCardinalityNames.get(feature);
         if (featureNames == null || featureNames.isEmpty() || featureNames.size() == 1) {
-            return new Literal(feature.getName().orElse("")); // fallback
+            return Features.createFeatureFormula(feature); // fallback
         }
         return createOrFromFeatureTrees(featureNames);
     }
@@ -705,13 +706,13 @@ public class ComputeFormula extends AComputation<IFormula> {
      */
     private IFormula createOrFromFeatureTrees(List<IFeatureTree> featureTrees) {
 
-        List<Literal> featureLiterals = new ArrayList<>();
+        List<IFormula> featureLiterals = new ArrayList<>();
 
         for (IFeatureTree featureTree : featureTrees) {
             String literalName =
                     featureTree.getAttributeValue(literalNameAttribute).orElse("");
             ;
-            Literal featureLiteral = new Literal(literalName);
+            IFormula featureLiteral = Features.createFeatureFormula(featureTree.getFeature(), literalName);
             featureLiterals.add(featureLiteral);
         }
 
@@ -769,7 +770,7 @@ public class ComputeFormula extends AComputation<IFormula> {
 
             for (IFeature feature : features) {
                 IFormula replacement = createOrReplacementWithoutContext(feature);
-                Literal toReplace = new Literal(feature.getName().get());
+                IFormula toReplace = Features.createFeatureFormula(feature);
                 replaceInTree(modifiedConstraint.getFormula(), toReplace, replacement);
             }
 

@@ -7,7 +7,6 @@ import de.featjar.base.tree.visitor.ITreeVisitor;
 import de.featjar.formula.structure.IExpression;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.term.aggregate.IAttributeAggregate;
-import de.featjar.formula.structure.term.value.Variable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,20 +22,20 @@ import java.util.Optional;
  */
 public class ReplaceAttributeAggregate implements ITreeVisitor<IFormula, Void> {
 
-    private final Map<Variable, Map<IAttribute<?>, Object>> attributes;
-    private boolean hasCardinalityFeatures;
+    private final Map<IFormula, Map<IAttribute<?>, Object>> attributes;
+    private final boolean hasCardinalityFeatures;
 
     public ReplaceAttributeAggregate(
-            Map<Variable, Map<IAttribute<?>, Object>> attributes, Boolean hasCardinalityFeatures) {
+            Map<IFormula, Map<IAttribute<?>, Object>> attributes, Boolean hasCardinalityFeatures) {
         this.attributes = attributes;
         this.hasCardinalityFeatures = hasCardinalityFeatures;
     }
 
     @Override
     public TraversalAction lastVisit(List<IFormula> path) {
-        final IExpression formula = ITreeVisitor.getCurrentNode(path);
+        final IExpression expression = ITreeVisitor.getCurrentNode(path);
 
-        if (formula instanceof IAttributeAggregate) {
+        if (expression instanceof IAttributeAggregate) {
 
             if (hasCardinalityFeatures) {
                 throw new UnsupportedOperationException(
@@ -44,26 +43,26 @@ public class ReplaceAttributeAggregate implements ITreeVisitor<IFormula, Void> {
             }
 
             final Result<IFormula> parent = ITreeVisitor.getParentNode(path);
-
             if (parent.isPresent()) {
-                ArrayList<Variable> filteredVariables = new ArrayList<>();
+                ArrayList<IFormula> filteredFeatures = new ArrayList<>();
                 ArrayList<Object> values = new ArrayList<>();
-                String attributeFilter = ((IAttributeAggregate) formula).getAttributeFilter();
+                String attributeFilter = ((IAttributeAggregate) expression).getAttributeFilter();
 
-                attributes.forEach((variable, value) -> {
+                // formula -> feature as a formula, value -> attribute map
+                attributes.forEach((formula, value) -> {
                     Optional<Map.Entry<IAttribute<?>, Object>> attributeMatch = value.entrySet().stream()
                             .filter(predicate -> predicate.getKey().getName().equals(attributeFilter))
                             .findFirst();
 
                     if (attributeMatch.isPresent()) {
-                        filteredVariables.add(variable);
+                        filteredFeatures.add(formula);
                         values.add(attributeMatch.get().getValue());
                     }
                 });
 
-                Result<IExpression> result = ((IAttributeAggregate) formula).translate(filteredVariables, values);
+                Result<IExpression> result = ((IAttributeAggregate) expression).translate(filteredFeatures, values);
                 if (result.isPresent()) {
-                    parent.get().replaceChild(formula, result.get());
+                    parent.get().replaceChild(expression, result.get());
                 }
             }
         }

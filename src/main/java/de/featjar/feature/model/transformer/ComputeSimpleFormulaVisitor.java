@@ -25,6 +25,7 @@ import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.visitor.ITreeVisitor;
 import de.featjar.feature.model.FeatureTree.Group;
+import de.featjar.feature.model.Features;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.formula.structure.Expressions;
@@ -54,7 +55,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
     protected ArrayList<IFormula> constraints;
     protected HashSet<Variable> variables;
-    private final Map<Variable, Map<IAttribute<?>, Object>> attributes;
+    private final Map<IFormula, Map<IAttribute<?>, Object>> attributes;
     private Boolean hasCardinalityFeature = Boolean.FALSE;
 
     /**
@@ -63,7 +64,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
      */
     public ComputeSimpleFormulaVisitor(ArrayList<IFormula> constraints,
                                        HashSet<Variable> variables,
-                                       Map<Variable, Map<IAttribute<?>, Object>> attributes) {
+                                       Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
 
         this.constraints = constraints;
         this.variables = variables;
@@ -87,11 +88,11 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         if (node.getFeature().getAttributes().isPresent()) {
             // name is an attribute as well
-            attributes.put(variable, node.getFeature().getAttributes().get());
+            attributes.put(Features.createFeatureFormula(feature), node.getFeature().getAttributes().get());
         }
 
         Result<IFeatureTree> potentialParentTree = node.getParent();
-        Literal featureLiteral = Expressions.literal(featureName);
+        IFormula featureLiteral = Features.createFeatureFormula(node.getFeature());
         if (potentialParentTree.isEmpty()) {
             handleRoot(featureLiteral, node);
         } else if (node.getFeatureCardinalityUpperBound() > 1) {
@@ -105,7 +106,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         return ITreeVisitor.super.firstVisit(path);
     }
 
-    private void handleParent(Literal featureLiteral, IFeatureTree node) {
+    private void handleParent(IFormula featureLiteral, IFeatureTree node) {
         // cardinal features must not be a parent
         IFormula parentLiteral = getParentLiteral(node);
         constraints.add(new Implies(featureLiteral, parentLiteral));
@@ -118,26 +119,27 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
             return getPseudoCardinalityOr(parent);
 
         } else {
-            return new Literal(parent.getFeature().getName().get());
+            return Features.createFeatureFormula(parent.getFeature());
         }
     }
 
     private Or getPseudoCardinalityOr(IFeatureTree parent) {
 
-        LinkedList<Literal> pseudoLiterals = new LinkedList<Literal>();
+        LinkedList<IFormula> pseudoLiterals = new LinkedList<>();
         for (int i = 1; i <= parent.getFeatureCardinalityUpperBound(); i++) {
-            pseudoLiterals.add(new Literal(parent.getFeature().getName().get() + "_" + i));
+            pseudoLiterals.add(Features.createFeatureFormula(parent.getFeature(),
+                    parent.getFeature().getName().get() + "_" + i));
         }
         return new Or(pseudoLiterals);
     }
 
-    private void handleRoot(Literal featureLiteral, IFeatureTree node) {
+    private void handleRoot(IFormula featureLiteral, IFeatureTree node) {
         if (node.isMandatory()) {
             constraints.add(featureLiteral);
         }
     }
 
-    private void handleCardinalityFeature(Literal featureLiteral, IFeatureTree node) {
+    private void handleCardinalityFeature(IFormula featureLiteral, IFeatureTree node) {
         hasCardinalityFeature = Boolean.TRUE;
 
         // remove cardinality feature variable from variables
@@ -151,7 +153,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         ArrayList<IFormula> originalFeatureConstraints = getConstraints(node);
         constraints.removeAll(originalFeatureConstraints);
 
-        ArrayList<IFormula> featureConstraintList = new ArrayList<IFormula>();
+        ArrayList<IFormula> featureConstraintList = new ArrayList<>();
 
         // add literals and implication to parent
         String literalName = "";
@@ -159,7 +161,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         for (int i = 1; i <= upperBound; i++) {
 
             literalName = node.getFeature().getName().get() + "_" + i;
-            featureLiteral = new Literal(literalName);
+            featureLiteral = Features.createFeatureFormula(node.getFeature(), literalName);
             handleParent(featureLiteral, node);
 
             if (i > 1) {
@@ -179,7 +181,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
         // literals
         IFormula replacement = new Or(featureConstraintList);
         for (IFormula constr : originalFeatureConstraints) {
-            constr.replaceChild(new Literal(node.getFeature().getName().get()), replacement);
+            constr.replaceChild(Features.createFeatureFormula(node.getFeature()), replacement);
             constraints.add(constr);
         }
 
@@ -190,10 +192,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
     }
 
     private ArrayList<IFormula> getConstraints(IFeatureTree node) {
-        ArrayList<IFormula> matchingConstraints = new ArrayList<IFormula>();
+        ArrayList<IFormula> matchingConstraints = new ArrayList<>();
         for (IFormula constraint : constraints) {
 
-            Literal nodeLiteral = new Literal(node.getFeature().getName().get());
+            IFormula nodeLiteral = Features.createFeatureFormula(node.getFeature());
 
             if (constraint.hasChild(nodeLiteral) || constraint.equals(nodeLiteral)) {
                 matchingConstraints.add(constraint);
@@ -218,8 +220,8 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         List<? extends IFeatureTree> children = node.getChildren();
         for (IFeatureTree childNode : children) {
-            Literal childLiteral =
-                    Expressions.literal(childNode.getFeature().getName().orElse(""));
+            IFormula childLiteral =
+                    Features.createFeatureFormula(childNode.getFeature());
 
             if (childNode.isMandatory()) {
                 constraints.add(new Implies(featureFormula, childLiteral));

@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 
+import de.featjar.formula.structure.predicate.NotEquals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,6 +122,36 @@ class ComputeFormulaTest {
     }
 
     @Test
+    void simpleWithTwoCardinalitiesNumericFeatures() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and set cardinality for the child feature
+        IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        childFeature1.mutate().setType(Integer.class);
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeature2.mutate().setType(Float.class);
+        IFeatureTree childFeature2Tree = childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+        childFeature2Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        expected = new Reference(new And(
+                new Literal("root"),
+                new Implies(new NotEquals(new Variable("A_1", Integer.class), new Constant(0)), new Literal("root")),
+                new Implies(new NotEquals(new Variable("A_2", Integer.class), new Constant(0)), new Literal("root")),
+                new Implies(new NotEquals(new Variable("A_2", Integer.class), new Constant(0)), new NotEquals(new Variable("A_1", Integer.class), new Constant(0))),
+                new Implies(new NotEquals(new Variable("B_1", Float.class), new Constant(0.0f)), new Or(new NotEquals(new Variable("A_1", Integer.class), new Constant(0)), new NotEquals(new Variable("A_2", Integer.class), new Constant(0)))),
+                new Implies(new NotEquals(new Variable("B_2", Float.class), new Constant(0.0f)), new Or(new NotEquals(new Variable("A_1", Integer.class), new Constant(0)), new NotEquals(new Variable("A_2", Integer.class), new Constant(0)))),
+                new Implies(new NotEquals(new Variable("B_2", Float.class), new Constant(0.0f)), new NotEquals(new Variable("B_1", Float.class), new Constant(0.0f)))));
+
+        executeSimpleTest();
+    }
+
+    @Test
     void withTwoCardinalies() {
         IFeatureTree rootTree =
                 featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
@@ -181,6 +212,75 @@ class ComputeFormulaTest {
                         new Choose(1, Arrays.asList(new Literal("B"), new Literal("C")))),
                 new Implies(new Literal("B"), new Or(new Literal("A_1"), new Literal("A_2"))),
                 new Implies(new Literal("C"), new Or(new Literal("A_1"), new Literal("A_2")))));
+
+        executeSimpleTest();
+    }
+
+    @Test
+    void simpleWithCardinalityAndChildGroupNumericFeatures() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and set cardinality for the child feature
+        IFeature childFeature1 = featureModel.mutate().addFeature("A");
+        childFeature1.mutate().setType(Float.class);
+        IFeatureTree childFeature1Tree = rootTree.mutate().addFeatureBelow(childFeature1);
+        childFeature1Tree.mutate().setFeatureCardinality(Range.of(0, 2));
+
+        childFeature1Tree.mutate().toAlternativeGroup();
+
+        IFeature childFeature2 = featureModel.mutate().addFeature("B");
+        childFeature2.mutate().setType(Integer.class);
+        childFeature1Tree.mutate().addFeatureBelow(childFeature2);
+
+
+        IFeature childFeature3 = featureModel.mutate().addFeature("C");
+        childFeature1Tree.mutate().addFeatureBelow(childFeature3);
+
+        expected = new Reference(new And(
+                new Literal("root"),
+                new Implies(
+                        new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
+                        new Literal("root")
+                ),
+                new Implies(
+                        new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f)),
+                        new Literal("root")
+                ),
+                new Implies(
+                        new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f)),
+                        new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f))
+                ),
+                new Implies(
+                        new Or (
+                                new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
+                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))
+                        ),
+                        new Choose(
+                                1,
+                                Arrays.asList(
+                                        new NotEquals(new Variable("B", Integer.class), new Constant(0)),
+                                        new Literal("C")
+                                )
+                        )
+                ),
+                new Implies(
+                        new NotEquals(new Variable("B", Integer.class), new Constant(0)),
+                        new Or (
+                                new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
+                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))
+                        )
+                ),
+                new Implies(
+                        new Literal("C"),
+                        new Or (
+                                new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
+                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))
+                        )
+                )
+        ));
 
         executeSimpleTest();
     }
@@ -520,7 +620,7 @@ class ComputeFormulaTest {
                 new Implies(new Literal("A"), new Literal("root")),
                 new LessThan(
                         new RealAdd(new IfThenElse(
-                                new Variable("A"), new Constant(10.0, Double.class), new Constant(0.0, Double.class))),
+                                new Literal("A"), new Constant(10.0, Double.class), new Constant(0.0, Double.class))),
                         new Constant(200.0, Double.class))));
 
         executeSimpleTest();
