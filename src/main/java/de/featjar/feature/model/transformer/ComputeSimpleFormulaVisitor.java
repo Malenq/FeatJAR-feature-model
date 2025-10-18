@@ -20,6 +20,7 @@
  */
 package de.featjar.feature.model.transformer;
 
+import de.featjar.base.data.IAttribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.visitor.ITreeVisitor;
@@ -36,10 +37,8 @@ import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
+
+import java.util.*;
 
 /**
  * This visitor implements a simple translation of IFeatureModel to boolean
@@ -55,15 +54,24 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
     protected ArrayList<IFormula> constraints;
     protected HashSet<Variable> variables;
+    private final Map<Variable, Map<IAttribute<?>, Object>> attributes;
+    private Boolean hasCardinalityFeature = Boolean.FALSE;
 
     /**
      * Constructor initializes constraints and variables originated from the
      * FeatureModel related to the given FeatureTree.
      */
-    public ComputeSimpleFormulaVisitor(ArrayList<IFormula> constraints, HashSet<Variable> variables) {
+    public ComputeSimpleFormulaVisitor(ArrayList<IFormula> constraints,
+                                       HashSet<Variable> variables,
+                                       Map<Variable, Map<IAttribute<?>, Object>> attributes) {
 
         this.constraints = constraints;
         this.variables = variables;
+        this.attributes = attributes;
+    }
+
+    public Boolean getHasCardinalityFeature() {
+        return hasCardinalityFeature;
     }
 
     @Override
@@ -76,6 +84,11 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         Variable variable = new Variable(featureName, feature.getType());
         variables.add(variable);
+
+        if (node.getFeature().getAttributes().isPresent()) {
+            // name is an attribute as well
+            attributes.put(variable, node.getFeature().getAttributes().get());
+        }
 
         Result<IFeatureTree> potentialParentTree = node.getParent();
         Literal featureLiteral = Expressions.literal(featureName);
@@ -125,6 +138,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
     }
 
     private void handleCardinalityFeature(Literal featureLiteral, IFeatureTree node) {
+        hasCardinalityFeature = Boolean.TRUE;
 
         // remove cardinality feature variable from variables
         Variable variable = new Variable(

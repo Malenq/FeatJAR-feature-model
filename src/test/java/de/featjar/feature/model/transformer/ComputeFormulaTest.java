@@ -21,6 +21,7 @@
 package de.featjar.feature.model.transformer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import de.featjar.base.FeatJAR;
 import de.featjar.base.computation.ComputeConstant;
+import de.featjar.base.data.Attribute;
 import de.featjar.base.data.Range;
 import de.featjar.base.data.identifier.Identifiers;
 import de.featjar.base.tree.Trees;
@@ -49,8 +51,16 @@ import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Not;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
+import de.featjar.formula.structure.predicate.LessThan;
 import de.featjar.formula.structure.predicate.Literal;
+import de.featjar.formula.structure.term.aggregate.AttributeSum;
+import de.featjar.formula.structure.term.function.IfThenElse;
+import de.featjar.formula.structure.term.function.RealAdd;
+import de.featjar.formula.structure.term.value.Constant;
 import de.featjar.formula.structure.term.value.Variable;
+import java.util.Arrays;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -66,12 +76,12 @@ import de.featjar.formula.structure.term.value.Variable;
 class ComputeFormulaTest {
     private IFeatureModel featureModel;
     private IFormula expected;
-    
+
     @BeforeAll
     public static void init() {
         FeatJAR.defaultConfiguration().initialize();
      }
-    
+
     @AfterAll
     public static void deinit() {
         FeatJAR.deinitialize();
@@ -478,6 +488,86 @@ class ComputeFormulaTest {
         expected = new Reference(new And(new Literal("root"), new Implies(new Literal("Test1"), new Literal("root"))));
 
         executeTest();
+    }
+
+    static Attribute<Boolean> cpuAttribute = new Attribute<>("cpu", Boolean.class);
+    static Attribute<Boolean> gpuAttribute = new Attribute<>("cpu", Boolean.class);
+
+    static Attribute<Double> costAttribute = new Attribute<>("cost", Double.class);
+
+    @Test
+    void simpleOneFeatureAndAttributeAggregate() {
+
+        // root
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and add our only child
+        IFeature childFeature = featureModel.mutate().addFeature("A");
+        rootTree.mutate().addFeatureBelow(childFeature);
+
+        // add attribute to aggregate
+        childFeature.mutate().setAttributeValue(costAttribute, 10.0);
+
+        // cross-tree constraint for aggregate testing
+        IFormula aggregateConstraint = new LessThan(new AttributeSum("cost"), new Constant(200.0, Double.class));
+        featureModel.mutate().addConstraint(aggregateConstraint);
+
+        expected = new Reference(new And(
+                new Literal("root"),
+                new Implies(new Literal("A"), new Literal("root")),
+                new LessThan(
+                        new RealAdd(new IfThenElse(
+                                new Variable("A"), new Constant(10.0, Double.class), new Constant(0.0, Double.class))),
+                        new Constant(200.0, Double.class))));
+
+        executeSimpleTest();
+    }
+
+    @Test
+    void cardinalityAndAttributeAggregate() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and add our only child
+        IFeature childFeature = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeatureTree = rootTree.mutate().addFeatureBelow(childFeature);
+        childFeatureTree.mutate().setFeatureCardinality(Range.of(0, 4));
+
+        // add attribute to aggregate
+        childFeature.mutate().setAttributeValue(costAttribute, 10.0);
+
+        // cross-tree constraint for aggregate testing
+        IFormula aggregateConstraint = new LessThan(new AttributeSum("cost"), new Constant(200.0, Double.class));
+        featureModel.mutate().addConstraint(aggregateConstraint);
+
+        executeExpectedException();
+    }
+
+    @Test
+    void simpleCardinalityAndAttributeAggregate() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("root"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and add our only child
+        IFeature childFeature = featureModel.mutate().addFeature("A");
+        IFeatureTree childFeatureTree = rootTree.mutate().addFeatureBelow(childFeature);
+        childFeatureTree.mutate().setFeatureCardinality(Range.of(0, 4));
+
+        // add attribute to aggregate
+        childFeature.mutate().setAttributeValue(costAttribute, 10.0);
+
+        // cross-tree constraint for aggregate testing
+        IFormula aggregateConstraint = new LessThan(new AttributeSum("cost"), new Constant(200.0, Double.class));
+        featureModel.mutate().addConstraint(aggregateConstraint);
+
+        executeSimpleExpectedException();
     }
 
     @Test
@@ -990,10 +1080,9 @@ class ComputeFormulaTest {
 
         TreePrinter visitor = new TreePrinter();
         visitor.setFilter(n -> !(n instanceof Variable));
-		FeatJAR.log().message(Trees.traverse(resultFormula, visitor));
+        FeatJAR.log().message(Trees.traverse(resultFormula, visitor));
         FeatJAR.log().message(resultFormula.print());
-       
-        
+
         for (IExpression expr : expected.getFirstChild().get().getChildren()) {
             try {
                 resultFormula.getFirstChild().get().removeChild(expr);
@@ -1004,7 +1093,6 @@ class ComputeFormulaTest {
 
         // assert
         assertEquals(resultFormula.getFirstChild().get().getChildrenCount(), 0);
-        
     }
 
     private void executeSimpleTest() {
@@ -1032,5 +1120,24 @@ class ComputeFormulaTest {
 
         // assert
         assertEquals(resultFormula.getFirstChild().get().getChildrenCount(), 0);
+    }
+
+    private void executeExpectedException() {
+        ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
+        ComputeFormula computeFormula = new ComputeFormula(computeConstant);
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> computeFormula.computeResult().orElseThrow());
+    }
+
+    private void executeSimpleExpectedException() {
+        ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
+        ComputeFormula computeFormula = new ComputeFormula(computeConstant);
+
+        assertThrows(UnsupportedOperationException.class, () -> computeFormula
+                .set(ComputeFormula.SIMPLE_TRANSLATION, Boolean.TRUE)
+                .computeResult()
+                .orElseThrow());
     }
 }
