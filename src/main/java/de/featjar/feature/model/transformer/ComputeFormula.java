@@ -42,9 +42,7 @@ import de.featjar.formula.structure.connective.Choose;
 import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
-import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
-
 import java.util.*;
 
 /**
@@ -145,7 +143,8 @@ public class ComputeFormula extends AComputation<IFormula> {
                     root.getFeature().getName().get(), root.getFeature().getType());
             variables.add(variable);
             if (root.getFeature().getAttributes().isPresent()) {
-                attributes.put(Features.createFeatureFormula(root.getFeature()),
+                attributes.put(
+                        Features.createFeatureFormula(root.getFeature()),
                         root.getFeature().getAttributes().get());
             }
 
@@ -166,17 +165,20 @@ public class ComputeFormula extends AComputation<IFormula> {
      * @param node from which to start the traversal
      * @param constraints list of constraints to which the generated constraints are added
      */
-    private void addChildConstraints(IFeatureTree node,
-                                     ArrayList<IFormula> constraints,
-                                     HashSet<Variable> variables,
-                                     Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
+    private void addChildConstraints(
+            IFeatureTree node,
+            ArrayList<IFormula> constraints,
+            HashSet<Variable> variables,
+            Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
         // collect the attributes of all features
         // TODO: check if the variables need to be duplicated?
         Variable variable = new Variable(
                 node.getFeature().getName().get(), node.getFeature().getType());
         variables.add(variable);
         if (node.getFeature().getAttributes().isPresent()) {
-            attributes.put(Features.createFeatureFormula(node.getFeature()), node.getFeature().getAttributes().get());
+            attributes.put(
+                    Features.createFeatureFormula(node.getFeature()),
+                    node.getFeature().getAttributes().get());
         }
 
         IFormula parentLiteral = Features.createFeatureFormula(node.getFeature(), getLiteralName(node));
@@ -492,39 +494,41 @@ public class ComputeFormula extends AComputation<IFormula> {
                                     List<IFeatureTree> contextualFeatureName =
                                             findContextualFeatureNames(contextFeatureName, feature);
                                     if (contextualFeatureName != null && !contextualFeatureName.isEmpty()) {
-                                        replacement = Features.createFeatureFormula(feature, contextualFeatureName
-                                                .get(0)
-                                                .getAttributeValue(literalNameAttribute)
-                                                .orElse(contextualFeatureName
+                                        replacement = Features.createFeatureFormula(
+                                                feature,
+                                                contextualFeatureName
                                                         .get(0)
-                                                        .getFeature()
-                                                        .getName()
-                                                        .orElse("")));
+                                                        .getAttributeValue(literalNameAttribute)
+                                                        .orElse(contextualFeatureName
+                                                                .get(0)
+                                                                .getFeature()
+                                                                .getName()
+                                                                .orElse("")));
                                     } else {
-                                        replacement =
-                                                Features.createFeatureFormula(feature);
+                                        replacement = Features.createFeatureFormula(feature);
                                     }
                                 }
                             } else {
                                 List<IFeatureTree> contextualFeatureName =
                                         findContextualFeatureNames(contextFeatureName, feature);
                                 if (contextualFeatureName != null && !contextualFeatureName.isEmpty()) {
-                                    replacement = Features.createFeatureFormula(feature, contextualFeatureName
-                                            .get(0)
-                                            .getAttributeValue(literalNameAttribute)
-                                            .orElse(contextualFeatureName
+                                    replacement = Features.createFeatureFormula(
+                                            feature,
+                                            contextualFeatureName
                                                     .get(0)
-                                                    .getFeature()
-                                                    .getName()
-                                                    .orElse("")));
+                                                    .getAttributeValue(literalNameAttribute)
+                                                    .orElse(contextualFeatureName
+                                                            .get(0)
+                                                            .getFeature()
+                                                            .getName()
+                                                            .orElse("")));
                                 } else {
                                     replacement = Features.createFeatureFormula(feature);
                                 }
                             }
 
                             if (replacement != null) {
-                                IFormula toReplace =
-                                        Features.createFeatureFormula(feature);
+                                IFormula toReplace = Features.createFeatureFormula(feature);
 
                                 if (!toReplace.equals(replacement)) {
                                     replaceInTree(modifiedConstraint.getFormula(), toReplace, replacement);
@@ -534,9 +538,11 @@ public class ComputeFormula extends AComputation<IFormula> {
 
                         IFormula formula = modifiedConstraint.getFormula();
                         IFormula contextFormula = new Implies(
-                                Features.createFeatureFormula(contextFeatureName.getFeature(), contextFeatureName
-                                        .getAttributeValue(literalNameAttribute)
-                                        .orElse("")),
+                                Features.createFeatureFormula(
+                                        contextFeatureName.getFeature(),
+                                        contextFeatureName
+                                                .getAttributeValue(literalNameAttribute)
+                                                .orElse("")),
                                 formula);
                         modifiedConstraint.mutate().setFormula(contextFormula);
 
