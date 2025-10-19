@@ -24,14 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.Arrays;
-
-import de.featjar.formula.structure.predicate.NotEquals;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import de.featjar.base.FeatJAR;
 import de.featjar.base.computation.ComputeConstant;
 import de.featjar.base.data.Attribute;
@@ -54,12 +46,15 @@ import de.featjar.formula.structure.connective.Or;
 import de.featjar.formula.structure.connective.Reference;
 import de.featjar.formula.structure.predicate.LessThan;
 import de.featjar.formula.structure.predicate.Literal;
+import de.featjar.formula.structure.predicate.NotEquals;
 import de.featjar.formula.structure.term.aggregate.AttributeSum;
 import de.featjar.formula.structure.term.function.IfThenElse;
 import de.featjar.formula.structure.term.function.RealAdd;
 import de.featjar.formula.structure.term.value.Constant;
 import de.featjar.formula.structure.term.value.Variable;
 import java.util.Arrays;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -81,12 +76,12 @@ class ComputeFormulaTest {
     @BeforeAll
     public static void init() {
         FeatJAR.defaultConfiguration().initialize();
-     }
+    }
 
     @AfterAll
     public static void deinit() {
         FeatJAR.deinitialize();
-     }
+    }
 
     @BeforeEach
     public void createFeatureModel() {
@@ -143,10 +138,22 @@ class ComputeFormulaTest {
                 new Literal("root"),
                 new Implies(new NotEquals(new Variable("A_1", Integer.class), new Constant(0)), new Literal("root")),
                 new Implies(new NotEquals(new Variable("A_2", Integer.class), new Constant(0)), new Literal("root")),
-                new Implies(new NotEquals(new Variable("A_2", Integer.class), new Constant(0)), new NotEquals(new Variable("A_1", Integer.class), new Constant(0))),
-                new Implies(new NotEquals(new Variable("B_1", Float.class), new Constant(0.0f)), new Or(new NotEquals(new Variable("A_1", Integer.class), new Constant(0)), new NotEquals(new Variable("A_2", Integer.class), new Constant(0)))),
-                new Implies(new NotEquals(new Variable("B_2", Float.class), new Constant(0.0f)), new Or(new NotEquals(new Variable("A_1", Integer.class), new Constant(0)), new NotEquals(new Variable("A_2", Integer.class), new Constant(0)))),
-                new Implies(new NotEquals(new Variable("B_2", Float.class), new Constant(0.0f)), new NotEquals(new Variable("B_1", Float.class), new Constant(0.0f)))));
+                new Implies(
+                        new NotEquals(new Variable("A_2", Integer.class), new Constant(0)),
+                        new NotEquals(new Variable("A_1", Integer.class), new Constant(0))),
+                new Implies(
+                        new NotEquals(new Variable("B_1", Float.class), new Constant(0.0f)),
+                        new Or(
+                                new NotEquals(new Variable("A_1", Integer.class), new Constant(0)),
+                                new NotEquals(new Variable("A_2", Integer.class), new Constant(0)))),
+                new Implies(
+                        new NotEquals(new Variable("B_2", Float.class), new Constant(0.0f)),
+                        new Or(
+                                new NotEquals(new Variable("A_1", Integer.class), new Constant(0)),
+                                new NotEquals(new Variable("A_2", Integer.class), new Constant(0)))),
+                new Implies(
+                        new NotEquals(new Variable("B_2", Float.class), new Constant(0.0f)),
+                        new NotEquals(new Variable("B_1", Float.class), new Constant(0.0f)))));
 
         executeSimpleTest();
     }
@@ -235,52 +242,35 @@ class ComputeFormulaTest {
         childFeature2.mutate().setType(Integer.class);
         childFeature1Tree.mutate().addFeatureBelow(childFeature2);
 
-
         IFeature childFeature3 = featureModel.mutate().addFeature("C");
         childFeature1Tree.mutate().addFeatureBelow(childFeature3);
 
         expected = new Reference(new And(
                 new Literal("root"),
-                new Implies(
-                        new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
-                        new Literal("root")
-                ),
+                new Implies(new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)), new Literal("root")),
+                new Implies(new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f)), new Literal("root")),
                 new Implies(
                         new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f)),
-                        new Literal("root")
-                ),
+                        new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f))),
                 new Implies(
-                        new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f)),
-                        new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f))
-                ),
-                new Implies(
-                        new Or (
+                        new Or(
                                 new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
-                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))
-                        ),
+                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))),
                         new Choose(
                                 1,
                                 Arrays.asList(
                                         new NotEquals(new Variable("B", Integer.class), new Constant(0)),
-                                        new Literal("C")
-                                )
-                        )
-                ),
+                                        new Literal("C")))),
                 new Implies(
                         new NotEquals(new Variable("B", Integer.class), new Constant(0)),
-                        new Or (
+                        new Or(
                                 new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
-                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))
-                        )
-                ),
+                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f)))),
                 new Implies(
                         new Literal("C"),
-                        new Or (
+                        new Or(
                                 new NotEquals(new Variable("A_1", Float.class), new Constant(0.0f)),
-                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))
-                        )
-                )
-        ));
+                                new NotEquals(new Variable("A_2", Float.class), new Constant(0.0f))))));
 
         executeSimpleTest();
     }
@@ -745,7 +735,7 @@ class ComputeFormulaTest {
         IFeature featureC = featureModel.mutate().addFeature("C");
         IFeatureTree treeC = treeA.mutate().addFeatureBelow(featureC);
         treeA.mutate().addFeatureBelow(featureB);
-        //		treeA.mutate().addFeatureBelow(featureC);
+        // treeA.mutate().addFeatureBelow(featureC);
         treeC.mutate().setFeatureCardinality(Range.of(0, 2));
 
         // Add the cross-tree-constraints
@@ -905,8 +895,10 @@ class ComputeFormulaTest {
         treeA.mutate().addFeatureBelow(featureB);
 
         // Add the cross-tree-constraints
-        //		featureModel.mutate().addConstraint(new Implies(new Literal("C"), new Literal("B")));
-        //		featureModel.mutate().addConstraint(new Implies(new Literal("B"), new Literal("C")));
+        // featureModel.mutate().addConstraint(new Implies(new Literal("C"), new
+        // Literal("B")));
+        // featureModel.mutate().addConstraint(new Implies(new Literal("B"), new
+        // Literal("C")));
         featureModel
                 .mutate()
                 .addConstraint(new Or(new Not(new Literal("D")), new And(new Literal("C"), new Literal("B"))));
@@ -1166,6 +1158,60 @@ class ComputeFormulaTest {
         executeTest();
     }
 
+    @Test
+    void presentationExample() {
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureModel.mutate().addFeature("IceCreamOrder"));
+        rootTree.mutate().makeMandatory();
+        rootTree.mutate().toAndGroup();
+
+        // create and set cardinality for the child feature
+        IFeature scoop = featureModel.mutate().addFeature("Scoop");
+        IFeatureTree scoopTree = rootTree.mutate().addFeatureBelow(scoop);
+        scoopTree.mutate().setFeatureCardinality(Range.of(0, 2));
+        scoopTree.mutate().toAlternativeGroup();
+
+        // add normal feature below
+        IFeature topping = featureModel.mutate().addFeature("Topping");
+        rootTree.mutate().addFeatureBelow(topping);
+
+        IFeature chocolate = featureModel.mutate().addFeature("Chocolate");
+        scoopTree.mutate().addFeatureBelow(chocolate);
+
+        IFeature strawberry = featureModel.mutate().addFeature("Strawberry");
+        scoopTree.mutate().addFeatureBelow(strawberry);
+
+        // cross-tree constraints
+        featureModel.mutate().addConstraint(new Implies(new Literal("Topping"), new Literal("Chocolate")));
+
+        expected = new Reference(new And(
+                new Literal("IceCreamOrder"),
+                new Implies(new Literal("Scoop_1"), new Literal("IceCreamOrder")),
+                new Implies(new Literal("Scoop_2"), new Literal("IceCreamOrder")),
+                new Implies(new Literal("Scoop_2"), new Literal("Scoop_1")),
+                new Implies(new Literal("Chocolate.Scoop_1"), new Literal("Scoop_1")),
+                new Implies(new Literal("Strawberry.Scoop_1"), new Literal("Scoop_1")),
+                new Implies(
+                        new Literal("Scoop_1"),
+                        new Choose(1, new Literal("Chocolate.Scoop_1"), new Literal("Strawberry.Scoop_1"))),
+                new Implies(new Literal("Chocolate.Scoop_2"), new Literal("Scoop_2")),
+                new Implies(new Literal("Strawberry.Scoop_2"), new Literal("Scoop_2")),
+                new Implies(
+                        new Literal("Scoop_2"),
+                        new Choose(1, new Literal("Chocolate.Scoop_2"), new Literal("Strawberry.Scoop_2"))),
+                new Implies(new Literal("Topping"), new Literal("IceCreamOrder")),
+                // these two might have an or for both chocolate scoops
+                new Implies(
+                        new Literal("Scoop_1"), new Implies(new Literal("Topping"), new Literal("Chocolate.Scoop_1"))),
+                new Implies(
+                        new Literal("Scoop_2"), new Implies(new Literal("Topping"), new Literal("Chocolate.Scoop_2"))),
+                new Implies(
+                        new Literal("Topping"),
+                        new Or(new Literal("Chocolate.Scoop_1"), new Literal("Chocolate.Scoop_2")))));
+
+        executeTest();
+    }
+
     private void executeTest() {
 
         ComputeConstant<IFeatureModel> computeConstant = new ComputeConstant<IFeatureModel>(featureModel);
@@ -1180,8 +1226,8 @@ class ComputeFormulaTest {
 
         TreePrinter visitor = new TreePrinter();
         visitor.setFilter(n -> !(n instanceof Variable));
+
         FeatJAR.log().message(Trees.traverse(resultFormula, visitor));
-        FeatJAR.log().message(resultFormula.print());
 
         for (IExpression expr : expected.getFirstChild().get().getChildren()) {
             try {
@@ -1209,6 +1255,9 @@ class ComputeFormulaTest {
         assertEquals(
                 expected.getFirstChild().get().getChildrenCount(),
                 resultFormula.getFirstChild().get().getChildrenCount());
+
+        TreePrinter visitor = new TreePrinter();
+        visitor.setFilter(n -> !(n instanceof Variable));
 
         for (IExpression expr : expected.getFirstChild().get().getChildren()) {
             try {
