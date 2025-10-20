@@ -34,7 +34,8 @@ public class TikzHeadFormat {
             return;
         }
 
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+        try (BufferedReader bufferedReader =
+                new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while (((line = bufferedReader.readLine()) != null)) {
                 if (line.contains("{replaceWithVerticalSetting}")) {

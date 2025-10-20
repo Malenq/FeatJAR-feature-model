@@ -1,6 +1,5 @@
 package de.featjar.feature.model.io.tikz.helper;
 
-import de.featjar.base.FeatJAR;
 import de.featjar.base.data.Result;
 import de.featjar.base.tree.visitor.ITreeVisitor;
 import de.featjar.feature.model.FeatureTree;
@@ -73,17 +72,19 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
 
     private void insertFeatureCardinality(IFeature feature) {
         IFeatureTree featureTree = feature.getFeatureTree().orElse(null);
-        FeatureTree.Group featureTreeParentGroup = feature.getFeatureTree().get().getParentGroup().orElse(null);
+        FeatureTree.Group featureTreeParentGroup =
+                feature.getFeatureTree().get().getParentGroup().orElse(null);
 
         if (isNotRootFeature(feature) && featureTreeParentGroup != null && featureTreeParentGroup.isAnd()) {
-            if (featureTree.getFeatureCardinalityLowerBound() == 0 &&
-                    featureTree.getFeatureCardinalityUpperBound() == 1) {
+            if (featureTree.getFeatureCardinalityLowerBound() == 0
+                    && featureTree.getFeatureCardinalityUpperBound() == 1) {
                 stringBuilder.append(",optional");
-            } else if(featureTree.getFeatureCardinalityLowerBound() == 1 &&
-                    featureTree.getFeatureCardinalityUpperBound() == 1) {
+            } else if (featureTree.getFeatureCardinalityLowerBound() == 1
+                    && featureTree.getFeatureCardinalityUpperBound() == 1) {
                 stringBuilder.append(",mandatory");
             } else {
-                stringBuilder.append(String.format(",featurecardinality={%d}{%d}",
+                stringBuilder.append(String.format(
+                        ",featurecardinality={%d}{%d}",
                         feature.getFeatureTree().get().getFeatureCardinalityLowerBound(),
                         feature.getFeatureTree().get().getFeatureCardinalityUpperBound()));
             }
@@ -95,20 +96,31 @@ public class PrintVisitor implements ITreeVisitor<IFeatureTree, String> {
 
         if (isNotRootFeature(feature)) {
             int previousChildrenCount = 1;
-            for(int i = 0; i < featureTree.getChildrenGroups().size(); i++) {
-                if(featureTree.getChildrenGroup(i).isPresent()) {
+            for (int i = 0; i < featureTree.getChildrenGroups().size(); i++) {
+                if (featureTree.getChildrenGroup(i).isPresent()) {
                     FeatureTree.Group group = featureTree.getChildrenGroup(i).get();
 
                     int childrenCount = featureTree.getChildren(i).size();
-                    if(group.isOr()) {
-                        stringBuilder.append(String.format(",or={%d}{%d}{%d}", previousChildrenCount, previousChildrenCount + childrenCount - 1,
+                    if (group.isOr()) {
+                        stringBuilder.append(String.format(
+                                ",or={%d}{%d}{%d}",
+                                previousChildrenCount,
+                                previousChildrenCount + childrenCount - 1,
                                 (2 * previousChildrenCount + childrenCount - 1) / 2));
-                    } else if(group.isAlternative()) {
-                        stringBuilder.append(String.format(",alternative={%d}{%d}{%d}", previousChildrenCount, previousChildrenCount + childrenCount - 1,
+                    } else if (group.isAlternative()) {
+                        stringBuilder.append(String.format(
+                                ",alternative={%d}{%d}{%d}",
+                                previousChildrenCount,
+                                previousChildrenCount + childrenCount - 1,
                                 (2 * previousChildrenCount + childrenCount - 1) / 2));
-                    } else if(group.isCardinalityGroup()) {
-                        stringBuilder.append(String.format(",groupcardinality={%d}{%d}{%d}{%d}{%d}", previousChildrenCount, previousChildrenCount + childrenCount - 1,
-                                (2 * previousChildrenCount + childrenCount - 1) / 2, group.getLowerBound(), group.getUpperBound()));
+                    } else if (group.isCardinalityGroup()) {
+                        stringBuilder.append(String.format(
+                                ",groupcardinality={%d}{%d}{%d}{%d}{%d}",
+                                previousChildrenCount,
+                                previousChildrenCount + childrenCount - 1,
+                                (2 * previousChildrenCount + childrenCount - 1) / 2,
+                                group.getLowerBound(),
+                                group.getUpperBound()));
                     }
 
                     previousChildrenCount += childrenCount;

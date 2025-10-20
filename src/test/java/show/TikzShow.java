@@ -29,7 +29,8 @@ public class TikzShow {
         IFeature wonderful = featureModel.mutate().addFeature("Wonderful");
         IFeature beautiful = featureModel.mutate().addFeature("Beautiful");
 
-        IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureRoot); // create tree and make it to an and group
+        IFeatureTree rootTree =
+                featureModel.mutate().addFeatureTreeRoot(featureRoot); // create tree and make it to an and group
         rootTree.mutate().toAndGroup();
 
         IFeatureTree firstFeatureTree = rootTree.mutate().addFeatureBelow(feature);
@@ -40,18 +41,18 @@ public class TikzShow {
 
         rootTree.mutate().addFeatureBelow(world);
 
-        TikzGraphicalFeatureModelFormat tikzGraphicalFeatureModelFormat = new TikzGraphicalFeatureModelFormat(
-                TikzAttributeHelper.FilterType.WITH_OUT,
-                List.of("name")
-        );
+        TikzGraphicalFeatureModelFormat tikzGraphicalFeatureModelFormat =
+                new TikzGraphicalFeatureModelFormat(TikzAttributeHelper.FilterType.WITH_OUT, List.of("name"));
 
         try {
             // write class output to a file
-            IO.save(featureModel, Paths.get("src", "test", "java", "show", "test-output-show.tex"), tikzGraphicalFeatureModelFormat);
+            IO.save(
+                    featureModel,
+                    Paths.get("src", "test", "java", "show", "test-output-show.tex"),
+                    tikzGraphicalFeatureModelFormat);
             FeatJAR.log().info("Build run successfully");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
 }

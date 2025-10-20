@@ -8,7 +8,6 @@ package de.featjar.feature.model.io.tikz.color;
  * @author Jonas Hanke
  */
 public enum TikzFeatureColor {
-
     RED("redColor"),
     ORANGE("orangeColor"),
     YELLOW("yellowColor"),

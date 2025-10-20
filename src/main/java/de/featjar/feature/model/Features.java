@@ -27,7 +27,7 @@ public class Features {
             return Expressions.literal(featureName);
         } else if (feature.getType().equals(Integer.class)) {
             return new NotEquals(new Variable(featureName, feature.getType()), new Constant(0));
-        } else if(feature.getType().equals(Float.class)) {
+        } else if (feature.getType().equals(Float.class)) {
             return new NotEquals(new Variable(featureName, feature.getType()), new Constant(0.0f));
         } else {
             throw new UnsupportedOperationException("Unsupported feature type: " + feature.getType());

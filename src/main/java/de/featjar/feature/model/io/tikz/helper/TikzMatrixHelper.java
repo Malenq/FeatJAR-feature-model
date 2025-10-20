@@ -9,13 +9,13 @@ package de.featjar.feature.model.io.tikz.helper;
  */
 public class TikzMatrixHelper {
 
-    private final static String NODE = "		\\node {replace}; \\\\" + System.lineSeparator();
-    private final static String DRAW = "			\\draw[drawColor] {replace};" + System.lineSeparator();
-    private final static String FILL_DRAW = " \\filldraw[drawColor] {replace}; " + System.lineSeparator();
-    private final static String FILL = "			\\fill[drawColor] {replace};" + System.lineSeparator();
+    private static final String NODE = "		\\node {replace}; \\\\" + System.lineSeparator();
+    private static final String DRAW = "			\\draw[drawColor] {replace};" + System.lineSeparator();
+    private static final String FILL_DRAW = " \\filldraw[drawColor] {replace}; " + System.lineSeparator();
+    private static final String FILL = "			\\fill[drawColor] {replace};" + System.lineSeparator();
 
     private final StringBuilder stringBuilder;
-    private final String header ;
+    private final String header;
 
     public TikzMatrixHelper(TikzMatrixType tikzMatrixType) {
         this.stringBuilder = new StringBuilder();
@@ -28,8 +28,7 @@ public class TikzMatrixHelper {
     }
 
     private void writeFooter() {
-        stringBuilder.append("	};")
-                .append(System.lineSeparator());
+        stringBuilder.append("	};").append(System.lineSeparator());
     }
 
     public TikzMatrixHelper writeNode(String value) {
@@ -56,5 +55,4 @@ public class TikzMatrixHelper {
         writeFooter();
         return stringBuilder;
     }
-
 }

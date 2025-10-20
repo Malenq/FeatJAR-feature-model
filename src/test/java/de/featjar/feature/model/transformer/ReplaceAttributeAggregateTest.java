@@ -44,9 +44,7 @@ public class ReplaceAttributeAggregateTest {
                         new Attribute<>("required", Boolean.class),
                         true,
                         new Attribute<>("power", Float.class),
-                        104.5f
-                )
-        );
+                        104.5f));
         attributes.put(
                 Expressions.literal("gpu"),
                 Map.of(
@@ -55,37 +53,17 @@ public class ReplaceAttributeAggregateTest {
                         new Attribute<>("required", Boolean.class),
                         false,
                         new Attribute<>("power", Float.class),
-                        200.5f
-                )
-        );
+                        200.5f));
         attributes.put(
                 Expressions.literal("ram"),
-                Map.of(
-                        new Attribute<>("cost", Long.class),
-                        20L,
-                        new Attribute<>("required", Boolean.class),
-                        true
-                )
-        );
+                Map.of(new Attribute<>("cost", Long.class), 20L, new Attribute<>("required", Boolean.class), true));
         attributes.put(
                 Expressions.literal("motherboard"),
-                Map.of(
-                        new Attribute<>("required", Boolean.class),
-                        true,
-                        new Attribute<>("power", Float.class),
-                        3.5f
-                )
-        );
+                Map.of(new Attribute<>("required", Boolean.class), true, new Attribute<>("power", Float.class), 3.5f));
         attributes.put(Expressions.literal("power_supply"), Collections.emptyMap());
         attributes.put(
                 new NotEquals(new Variable("refreshrate", Double.class), new Constant(0.0)),
-                Map.of(
-                        new Attribute<>("required", Boolean.class),
-                        true,
-                        new Attribute<>("power", Float.class),
-                        1.0f
-                )
-        );
+                Map.of(new Attribute<>("required", Boolean.class), true, new Attribute<>("power", Float.class), 1.0f));
     }
 
     @Test
@@ -96,18 +74,11 @@ public class ReplaceAttributeAggregateTest {
 
         IFormula comparison = new LessThan(
                 new IntegerAdd(
+                        new IfThenElse(new Literal("cpu"), new Constant(10L, Long.class), new Constant(0L, Long.class)),
                         new IfThenElse(
-                                new Literal("cpu"),
-                                new Constant(10L, Long.class),
-                                new Constant(0L, Long.class)),
+                                new Literal("gpu"), new Constant(100L, Long.class), new Constant(0L, Long.class)),
                         new IfThenElse(
-                                new Literal("gpu"),
-                                new Constant(100L, Long.class),
-                                new Constant(0L, Long.class)),
-                        new IfThenElse(
-                                new Literal("ram"),
-                                new Constant(20L, Long.class),
-                                new Constant(0L, Long.class))),
+                                new Literal("ram"), new Constant(20L, Long.class), new Constant(0L, Long.class))),
                 new Constant(200L, Long.class));
 
         assertTrue(test.equalsTree(comparison));
@@ -121,18 +92,11 @@ public class ReplaceAttributeAggregateTest {
 
         IFormula comparison = new LessThan(
                 new IntegerAdd(
+                        new IfThenElse(new Literal("cpu"), new Constant(10L, Long.class), new Constant(0L, Long.class)),
                         new IfThenElse(
-                                new Literal("cpu"),
-                                new Constant(10L, Long.class),
-                                new Constant(0L, Long.class)),
+                                new Literal("gpu"), new Constant(100L, Long.class), new Constant(0L, Long.class)),
                         new IfThenElse(
-                                new Literal("gpu"),
-                                new Constant(100L, Long.class),
-                                new Constant(0L, Long.class)),
-                        new IfThenElse(
-                                new Literal("ram"),
-                                new Constant(20L, Long.class),
-                                new Constant(0L, Long.class))),
+                                new Literal("ram"), new Constant(20L, Long.class), new Constant(0L, Long.class))),
                 new RealDivide(
                         new RealAdd(
                                 new IfThenElse(
@@ -150,8 +114,7 @@ public class ReplaceAttributeAggregateTest {
                                 new IfThenElse(
                                         new NotEquals(new Variable("refreshrate", Double.class), new Constant(0.0)),
                                         new Constant(1.0, Double.class),
-                                        new Constant(0.0, Double.class))
-                        ),
+                                        new Constant(0.0, Double.class))),
                         new RealAdd(
                                 new IfThenElse(
                                         new Literal("cpu"),
@@ -168,9 +131,7 @@ public class ReplaceAttributeAggregateTest {
                                 new IfThenElse(
                                         new NotEquals(new Variable("refreshrate", Double.class), new Constant(0.0)),
                                         new Constant(1.0, Double.class),
-                                        new Constant(0.0, Double.class))
-                        )
-                ));
+                                        new Constant(0.0, Double.class)))));
 
         assertTrue(test.equalsTree(comparison));
     }

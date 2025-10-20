@@ -8,14 +8,14 @@ import de.featjar.feature.model.*;
 import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
 import de.featjar.formula.structure.Expressions;
 import de.featjar.formula.structure.connective.*;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the full output with a test feature model and attributes, constrains and more
@@ -42,7 +42,7 @@ public class FeatureModelDisplayTikzTest {
         IFeature world2 = featureModel.mutate().addFeature("World2");
         IFeature wonderful1 = featureModel.mutate().addFeature("Wonderful1");
         wonderful1.mutate().setAttributeValue(new Attribute<>("who", String.class), "you");
-        wonderful1.mutate().setAttributeValue(new Attribute<>( "when", String.class), "now");
+        wonderful1.mutate().setAttributeValue(new Attribute<>("when", String.class), "now");
         IFeature beautiful1 = featureModel.mutate().addFeature("Beautiful1");
         IFeature wonderful2 = featureModel.mutate().addFeature("Wonderful2");
         IFeature beautiful2 = featureModel.mutate().addFeature("Beautiful2");
@@ -56,24 +56,23 @@ public class FeatureModelDisplayTikzTest {
         featureRootS.mutate().setAbstract();
 
         // first tree
-        IFeatureTree rootTree =
-                featureModel.mutate().addFeatureTreeRoot(featureRootS);
+        IFeatureTree rootTree = featureModel.mutate().addFeatureTreeRoot(featureRootS);
         rootTree.mutate().toAndGroup();
 
         IFeatureTree firstFeatureTree = rootTree.mutate().addFeatureBelow(feature);
         feature.mutate().setAbstract();
         int group1 = firstFeatureTree.mutate().addAlternativeGroup();
         int group2 = firstFeatureTree.mutate().addOrGroup();
-        int group3 = firstFeatureTree.mutate().addCardinalityGroup(Range.of(7,8));
+        int group3 = firstFeatureTree.mutate().addCardinalityGroup(Range.of(7, 8));
 
         firstFeatureTree.mutate().addFeatureBelow(wonderful1, 0, group1);
-        firstFeatureTree.mutate().setFeatureCardinality(Range.of(0,2));
+        firstFeatureTree.mutate().setFeatureCardinality(Range.of(0, 2));
         firstFeatureTree.mutate().addFeatureBelow(beautiful1, 1, group1);
 
         firstFeatureTree.mutate().addFeatureBelow(wonderful2, 2, group2);
         IFeatureTree beautiful2FeatureTree = firstFeatureTree.mutate().addFeatureBelow(beautiful2, 3, group2);
 
-        int group4 = beautiful2FeatureTree.mutate().addCardinalityGroup(Range.of(0,2));
+        int group4 = beautiful2FeatureTree.mutate().addCardinalityGroup(Range.of(0, 2));
         beautiful2FeatureTree.mutate().addFeatureBelow(meaningful1, 0, group4);
         beautiful2FeatureTree.mutate().addFeatureBelow(meaningful2, 1, group4);
         beautiful2FeatureTree.mutate().addFeatureBelow(meaningful3, 2, group4);
@@ -88,7 +87,9 @@ public class FeatureModelDisplayTikzTest {
 
         // Constraints
         featureModel.addConstraint(new And(Expressions.literal("World1"), Expressions.literal("Wonderful1")));
-        featureModel.addConstraint(new Implies(Expressions.literal("World2"), new BiImplies(Expressions.literal("Beautiful2"), Expressions.literal("Beautiful3"))));
+        featureModel.addConstraint(new Implies(
+                Expressions.literal("World2"),
+                new BiImplies(Expressions.literal("Beautiful2"), Expressions.literal("Beautiful3"))));
 
         FeatureModelDisplayTikzTest.featureModel = featureModel;
     }
@@ -104,9 +105,7 @@ public class FeatureModelDisplayTikzTest {
         String value = expectedOutput.toString();
 
         TikzGraphicalFeatureModelFormat tikzGraphicalFeatureModelFormat = new TikzGraphicalFeatureModelFormat(
-                TikzAttributeHelper.FilterType.WITH_OUT,
-                List.of("name", "abstract")
-        );
+                TikzAttributeHelper.FilterType.WITH_OUT, List.of("name", "abstract"));
         tikzGraphicalFeatureModelFormat.serialize(featureModel).ifPresent(output -> {
             FeatJAR.log().info("Expected Output: " + value);
             FeatJAR.log().info("Acutally Output: " + output);
@@ -119,9 +118,7 @@ public class FeatureModelDisplayTikzTest {
     // @Test
     public void createTestFile() {
         TikzGraphicalFeatureModelFormat tikzGraphicalFeatureModelFormat = new TikzGraphicalFeatureModelFormat(
-                TikzAttributeHelper.FilterType.WITH_OUT,
-                List.of("name", "abstract")
-        );
+                TikzAttributeHelper.FilterType.WITH_OUT, List.of("name", "abstract"));
         tikzGraphicalFeatureModelFormat.serialize(featureModel).ifPresent(this::writeToFile);
     }
 

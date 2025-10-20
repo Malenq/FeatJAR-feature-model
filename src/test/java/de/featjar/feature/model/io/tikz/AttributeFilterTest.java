@@ -7,11 +7,10 @@ import de.featjar.feature.model.FeatureModel;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 /**
  * Test for displaying the attributes in tikz (filter)
@@ -25,22 +24,22 @@ public class AttributeFilterTest {
     private static IFeatureModel featureModel;
     private static IFeature feature;
 
-    private final String FIRST_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n" +
-            "\\small\\texttt{int-attribute (Integer)} &\\small\\texttt{= 1} \\\\\n" +
-            ",align=ll";
-    private final String SECOND_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n" +
-            "\\small\\texttt{int-attribute (Integer)} &\\small\\texttt{= 1} \\\\\n" +
-            "\\small\\texttt{bool-attribute (Boolean)} &\\small\\texttt{= true} \\\\\n" +
-            ",align=ll";
-    private final String THIRD_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n" +
-            "\\small\\texttt{name (String)} &\\small\\texttt{= attribute-test} \\\\\n" +
-            "\\small\\texttt{bool-attribute (Boolean)} &\\small\\texttt{= true} \\\\\n" +
-            "\\small\\texttt{string-attribute (String)} &\\small\\texttt{= hallo} \\\\\n" +
-            ",align=ll";
-    private final String FOURTH_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n" +
-            "\\small\\texttt{name (String)} &\\small\\texttt{= attribute-test} \\\\\n" +
-            "\\small\\texttt{string-attribute (String)} &\\small\\texttt{= hallo} \\\\\n" +
-            ",align=ll";
+    private final String FIRST_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n"
+            + "\\small\\texttt{int-attribute (Integer)} &\\small\\texttt{= 1} \\\\\n"
+            + ",align=ll";
+    private final String SECOND_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n"
+            + "\\small\\texttt{int-attribute (Integer)} &\\small\\texttt{= 1} \\\\\n"
+            + "\\small\\texttt{bool-attribute (Boolean)} &\\small\\texttt{= true} \\\\\n"
+            + ",align=ll";
+    private final String THIRD_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n"
+            + "\\small\\texttt{name (String)} &\\small\\texttt{= attribute-test} \\\\\n"
+            + "\\small\\texttt{bool-attribute (Boolean)} &\\small\\texttt{= true} \\\\\n"
+            + "\\small\\texttt{string-attribute (String)} &\\small\\texttt{= hallo} \\\\\n"
+            + ",align=ll";
+    private final String FOURTH_TEST_OUTPUT = "[\\multicolumn{2}{c}{attribute-test} \\\\\\hline\n"
+            + "\\small\\texttt{name (String)} &\\small\\texttt{= attribute-test} \\\\\n"
+            + "\\small\\texttt{string-attribute (String)} &\\small\\texttt{= hallo} \\\\\n"
+            + ",align=ll";
 
     @BeforeAll
     public static void init() {
@@ -113,5 +112,4 @@ public class AttributeFilterTest {
 
         Assertions.assertEquals(stringBuilder.toString(), FOURTH_TEST_OUTPUT);
     }
-
 }

@@ -5,13 +5,12 @@ import de.featjar.feature.model.IConstraint;
 import de.featjar.feature.model.IFeatureModel;
 import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.TikzGraphicalFeatureModelFormat;
+import de.featjar.feature.model.io.tikz.helper.PrintVisitor;
 import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
 import de.featjar.feature.model.io.tikz.helper.TikzMatrixHelper;
 import de.featjar.feature.model.io.tikz.helper.TikzMatrixType;
-import de.featjar.feature.model.io.tikz.helper.PrintVisitor;
 import de.featjar.formula.io.textual.ExpressionSerializer;
 import de.featjar.formula.io.textual.LaTexSymbols;
-
 import java.util.List;
 
 /**
@@ -29,7 +28,12 @@ public class TikzMainFormat {
     private final TikzAttributeHelper.FilterType filterType;
     private final List<String> filterValues;
 
-    public TikzMainFormat(IFeatureModel featureModel , IFeatureTree featureTree, StringBuilder stringBuilder, TikzAttributeHelper.FilterType filterType, List<String> filterValues) {
+    public TikzMainFormat(
+            IFeatureModel featureModel,
+            IFeatureTree featureTree,
+            StringBuilder stringBuilder,
+            TikzAttributeHelper.FilterType filterType,
+            List<String> filterValues) {
         this.featureModel = featureModel;
         this.featureTree = featureTree;
         this.stringBuilder = stringBuilder;
@@ -42,8 +46,11 @@ public class TikzMainFormat {
      */
     public void printForest() {
         stringBuilder
-                .append("\\begin{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR)
-                .append("\tfeatureDiagram").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR).append("\t");
+                .append("\\begin{forest}")
+                .append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR)
+                .append("\tfeatureDiagram")
+                .append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR)
+                .append("\t");
 
         PrintVisitor printVisitor = new PrintVisitor(filterType, filterValues);
         Trees.traverse(featureTree, printVisitor);
@@ -54,7 +61,7 @@ public class TikzMainFormat {
         if (!featureTree.getFeature().isHidden()) {
             printLegend();
         }
-        if(!featureModel.getConstraints().isEmpty()) {
+        if (!featureModel.getConstraints().isEmpty()) {
             printConstraints();
         }
         stringBuilder.append("\\end{forest}").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
@@ -64,7 +71,8 @@ public class TikzMainFormat {
      * Processes a String to make special symbols LaTeX compatible.
      */
     private void postProcessing() {
-        stringBuilder.replace(0, stringBuilder.length(), stringBuilder.toString().replace("_", "\\_"));
+        stringBuilder.replace(
+                0, stringBuilder.length(), stringBuilder.toString().replace("_", "\\_"));
     }
 
     private void printLegend() {
@@ -112,12 +120,19 @@ public class TikzMainFormat {
         expressionSerializer.setEnquoteAlways(true);
         expressionSerializer.setSymbols(LaTexSymbols.INSTANCE);
 
-        stringBuilder.append("	\\matrix [below=1mm of current bounding box] {").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+        stringBuilder
+                .append("	\\matrix [below=1mm of current bounding box] {")
+                .append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
         for (IConstraint constraint : featureModel.getConstraints()) {
             String text = constraint.getFormula().traverse(expressionSerializer).get();
-            text = text.replaceAll("\"([\\w\" ]+)\"", " \\\\text\\{$1\\} "); // wrap all words in \text{} // replace with $2
+            text = text.replaceAll(
+                    "\"([\\w\" ]+)\"", " \\\\text\\{$1\\} "); // wrap all words in \text{} // replace with $2
             text = text.replaceAll("\\s+", " "); // remove unnecessary whitespace characters
-            stringBuilder.append("	\\node {\\(").append(text).append("\\)}; \\\\").append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
+            stringBuilder
+                    .append("	\\node {\\(")
+                    .append(text)
+                    .append("\\)}; \\\\")
+                    .append(TikzGraphicalFeatureModelFormat.LINE_SEPERATOR);
 
             expressionSerializer.reset();
         }

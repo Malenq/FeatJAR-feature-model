@@ -65,7 +65,9 @@ public class TikzAttributeHelper {
 
         Map<IAttribute<?>, Object> iAttributeObjectMap = feature.getAttributes().orElse(null);
         // check: if the attribute map is empty or null
-        if (iAttributeObjectMap == null || iAttributeObjectMap.isEmpty() || countAttributeToDisplay(iAttributeObjectMap) == 0) {
+        if (iAttributeObjectMap == null
+                || iAttributeObjectMap.isEmpty()
+                || countAttributeToDisplay(iAttributeObjectMap) == 0) {
             stringBuilder.append("[").append(featureName); // add the name without multicolumn
             return;
         }
@@ -84,7 +86,8 @@ public class TikzAttributeHelper {
         if (filterWithType(attribute.getName().toUpperCase())) {
             return; // ignore attribute
         }
-        stringBuilder.append(replace(VALUE, attribute.getName(), attribute.getType().getSimpleName(), object));
+        stringBuilder.append(
+                replace(VALUE, attribute.getName(), attribute.getType().getSimpleName(), object));
         replace(VALUE, 12, 2);
     }
 
@@ -98,7 +101,7 @@ public class TikzAttributeHelper {
         int size = values.size();
         for (IAttribute<?> attribute : values.keySet()) {
             if (filterWithType(attribute.getName().toUpperCase())) {
-                size-=1;
+                size -= 1;
             }
         }
         return size;
@@ -148,5 +151,4 @@ public class TikzAttributeHelper {
         DISPLAY,
         WITH_OUT;
     }
-
 }

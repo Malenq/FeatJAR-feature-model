@@ -8,7 +8,6 @@ import de.featjar.feature.model.IFeatureTree;
 import de.featjar.feature.model.io.tikz.format.TikzHeadFormat;
 import de.featjar.feature.model.io.tikz.format.TikzMainFormat;
 import de.featjar.feature.model.io.tikz.helper.TikzAttributeHelper;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +21,7 @@ import java.util.List;
  */
 public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
 
-    public static String LINE_SEPERATOR  = System.lineSeparator();
+    public static String LINE_SEPERATOR = System.lineSeparator();
 
     private TikzAttributeHelper.FilterType filterType = TikzAttributeHelper.FilterType.WITH_OUT; // default
     private List<String> filterValues = new ArrayList<>(); // default
@@ -43,14 +42,17 @@ public class TikzGraphicalFeatureModelFormat implements IFormat<IFeatureModel> {
         TikzHeadFormat.header(stringBuilder, problemList, false);
 
         stringBuilder
-                .append("\\begin{document}").append(LINE_SEPERATOR)
-                .append("	%---The Feature Diagram-----------------------------------------------------").append(LINE_SEPERATOR);
+                .append("\\begin{document}")
+                .append(LINE_SEPERATOR)
+                .append("	%---The Feature Diagram-----------------------------------------------------")
+                .append(LINE_SEPERATOR);
         for (IFeatureTree featureTree : featureModel.getRoots()) {
             new TikzMainFormat(featureModel, featureTree, stringBuilder, filterType, filterValues).printForest();
         }
         stringBuilder
                 .append(LINE_SEPERATOR)
-                .append("\t%---------------------------------------------------------------------------").append(LINE_SEPERATOR)
+                .append("\t%---------------------------------------------------------------------------")
+                .append(LINE_SEPERATOR)
                 .append("\\end{document}");
 
         return Result.of(stringBuilder.toString(), problemList);

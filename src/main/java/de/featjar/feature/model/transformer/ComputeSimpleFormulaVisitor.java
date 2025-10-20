@@ -28,7 +28,6 @@ import de.featjar.feature.model.FeatureTree.Group;
 import de.featjar.feature.model.Features;
 import de.featjar.feature.model.IFeature;
 import de.featjar.feature.model.IFeatureTree;
-import de.featjar.formula.structure.Expressions;
 import de.featjar.formula.structure.IFormula;
 import de.featjar.formula.structure.connective.AtLeast;
 import de.featjar.formula.structure.connective.AtMost;
@@ -36,9 +35,7 @@ import de.featjar.formula.structure.connective.Between;
 import de.featjar.formula.structure.connective.Choose;
 import de.featjar.formula.structure.connective.Implies;
 import de.featjar.formula.structure.connective.Or;
-import de.featjar.formula.structure.predicate.Literal;
 import de.featjar.formula.structure.term.value.Variable;
-
 import java.util.*;
 
 /**
@@ -62,9 +59,10 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
      * Constructor initializes constraints and variables originated from the
      * FeatureModel related to the given FeatureTree.
      */
-    public ComputeSimpleFormulaVisitor(ArrayList<IFormula> constraints,
-                                       HashSet<Variable> variables,
-                                       Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
+    public ComputeSimpleFormulaVisitor(
+            ArrayList<IFormula> constraints,
+            HashSet<Variable> variables,
+            Map<IFormula, Map<IAttribute<?>, Object>> attributes) {
 
         this.constraints = constraints;
         this.variables = variables;
@@ -88,7 +86,9 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         if (node.getFeature().getAttributes().isPresent()) {
             // name is an attribute as well
-            attributes.put(Features.createFeatureFormula(feature), node.getFeature().getAttributes().get());
+            attributes.put(
+                    Features.createFeatureFormula(feature),
+                    node.getFeature().getAttributes().get());
         }
 
         Result<IFeatureTree> potentialParentTree = node.getParent();
@@ -127,8 +127,8 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         LinkedList<IFormula> pseudoLiterals = new LinkedList<>();
         for (int i = 1; i <= parent.getFeatureCardinalityUpperBound(); i++) {
-            pseudoLiterals.add(Features.createFeatureFormula(parent.getFeature(),
-                    parent.getFeature().getName().get() + "_" + i));
+            pseudoLiterals.add(Features.createFeatureFormula(
+                    parent.getFeature(), parent.getFeature().getName().get() + "_" + i));
         }
         return new Or(pseudoLiterals);
     }
@@ -220,8 +220,7 @@ public class ComputeSimpleFormulaVisitor implements ITreeVisitor<IFeatureTree, V
 
         List<? extends IFeatureTree> children = node.getChildren();
         for (IFeatureTree childNode : children) {
-            IFormula childLiteral =
-                    Features.createFeatureFormula(childNode.getFeature());
+            IFormula childLiteral = Features.createFeatureFormula(childNode.getFeature());
 
             if (childNode.isMandatory()) {
                 constraints.add(new Implies(featureFormula, childLiteral));

@@ -29,13 +29,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
-*
-* Test class with presentation example of ComputeFormula.
-*
-* @author Klara Surmeier
-* @author Nermine Mansour
-* @author Malena Horstmann
-*/
+ *
+ * Test class with presentation example of ComputeFormula.
+ *
+ * @author Klara Surmeier
+ * @author Nermine Mansour
+ * @author Malena Horstmann
+ */
 public class ComputeFormulaPresentationExample {
     private IFeatureModel featureModel;
     private IFormula expected;

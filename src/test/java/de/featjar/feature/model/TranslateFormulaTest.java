@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
  * @author Felix Behme
  * @author Jonas Hanke
  */
-
 public class TranslateFormulaTest {
 
     @BeforeAll
@@ -35,9 +34,7 @@ public class TranslateFormulaTest {
         IFeatureModel featureModel = new FeatureModel(Identifiers.newCounterIdentifier());
         addValues(featureModel, Integer.class);
 
-        IFormula result = Computations.of(featureModel)
-                .map(ComputeFormula::new)
-                .compute();
+        IFormula result = Computations.of(featureModel).map(ComputeFormula::new).compute();
         IFormula formula = buildFormula(Integer.class, 0);
         Assertions.assertTrue(Trees.equals(result, formula), result.print() + "\n" + formula.print());
         FeatJAR.log().info("Integer Test expected value: " + formula.print());
@@ -49,9 +46,7 @@ public class TranslateFormulaTest {
         IFeatureModel featureModel = new FeatureModel(Identifiers.newCounterIdentifier());
         addValues(featureModel, Boolean.class);
 
-        IFormula result = Computations.of(featureModel)
-                .map(ComputeFormula::new)
-                .compute();
+        IFormula result = Computations.of(featureModel).map(ComputeFormula::new).compute();
         IFormula formula = buildBooleanForumla();
         Assertions.assertTrue(Trees.equals(result, formula), result.print() + "\n" + formula.print());
         FeatJAR.log().info("Boolean Test expected value: " + formula.print());
@@ -63,9 +58,7 @@ public class TranslateFormulaTest {
         IFeatureModel featureModel = new FeatureModel(Identifiers.newCounterIdentifier());
         addValues(featureModel, Float.class);
 
-        IFormula result = Computations.of(featureModel)
-                .map(ComputeFormula::new)
-                .compute();
+        IFormula result = Computations.of(featureModel).map(ComputeFormula::new).compute();
         IFormula formula = buildFormula(Float.class, (float) 0.0);
         Assertions.assertTrue(Trees.equals(result, formula), result.print() + "\n" + formula.print());
         FeatJAR.log().info("Float Test expected value: " + formula.print());
@@ -88,17 +81,21 @@ public class TranslateFormulaTest {
 
     private IFormula buildFormula(Class<?> type, Object expectedValue) {
         return new Reference(new And(
-                Expressions.implies(new NotEquals(new Variable("feature0", type),
-                        new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature1", type),
-                        new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature2", type),
-                        new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature3", type),
-                        new Constant(expectedValue, type)), new Literal("root")),
-                Expressions.implies(new NotEquals(new Variable("feature4", type),
-                        new Constant(expectedValue, type)), new Literal("root"))
-        ));
+                Expressions.implies(
+                        new NotEquals(new Variable("feature0", type), new Constant(expectedValue, type)),
+                        new Literal("root")),
+                Expressions.implies(
+                        new NotEquals(new Variable("feature1", type), new Constant(expectedValue, type)),
+                        new Literal("root")),
+                Expressions.implies(
+                        new NotEquals(new Variable("feature2", type), new Constant(expectedValue, type)),
+                        new Literal("root")),
+                Expressions.implies(
+                        new NotEquals(new Variable("feature3", type), new Constant(expectedValue, type)),
+                        new Literal("root")),
+                Expressions.implies(
+                        new NotEquals(new Variable("feature4", type), new Constant(expectedValue, type)),
+                        new Literal("root"))));
     }
 
     private IFormula buildBooleanForumla() {
@@ -107,7 +104,6 @@ public class TranslateFormulaTest {
                 Expressions.implies(Expressions.literal("feature1"), Expressions.literal("root")),
                 Expressions.implies(Expressions.literal("feature2"), Expressions.literal("root")),
                 Expressions.implies(Expressions.literal("feature3"), Expressions.literal("root")),
-                Expressions.implies(Expressions.literal("feature4"), Expressions.literal("root"))
-        ));
+                Expressions.implies(Expressions.literal("feature4"), Expressions.literal("root"))));
     }
 }
