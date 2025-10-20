@@ -805,6 +805,18 @@ class ComputeFormulaTest {
                         new Literal("C_2.A_2"),
                         new Implies(new Literal("C_2.A_2"), new Or(new Literal("B.A_1"), new Literal("B.A_2")))),
 
+                /*
+                 * TODO: check if nested cardinality within context works as intended. Example
+                 * (implemented in the following): C implies B
+                 *
+                 * Within the context of C, there are four different Cs. Because the cardinality
+                 * features are nested, both referenced features (C and D) are also in the
+                 * context of A. This is taken into account for the Cs (as they determine the
+                 * context) but not for B. Check if this behavior is logically correct or needs
+                 * to be changed. The corresponding translation is located within the
+                 * ComputeFormula class, specifically in createContextualCloneConstraints.
+                 */
+
                 // B implies C
                 new Implies(
                         new Literal("C_1.A_1"),
@@ -871,7 +883,8 @@ class ComputeFormulaTest {
                                         new Literal("C_2.A_2")),
                                 new Or(new Literal("B.A_1"), new Literal("B.A_2"))))));
 
-        executeTest();
+        // fail test because of open questions.
+        fail();
     }
 
     @Test
@@ -945,7 +958,7 @@ class ComputeFormulaTest {
         treeE.mutate().setFeatureCardinality(Range.of(0, 2));
 
         IFeature featureF = featureModel.mutate().addFeature("F");
-        IFeatureTree treeF = rootTree.mutate().addFeatureBelow(featureF);
+        rootTree.mutate().addFeatureBelow(featureF);
 
         // features B and C are children of A
         IFeature featureB = featureModel.mutate().addFeature("B");
